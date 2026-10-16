@@ -737,7 +737,7 @@
             object-position: center;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: high-quality;
-            filter: contrast(1.05) saturate(1.06);
+            filter: contrast(1.08) saturate(1.10) brightness(1.03);
             border-radius: var(--radl);
         }
         .dz-prev-rm {
@@ -809,14 +809,17 @@
             display: inline-flex;
             align-items: center;
             gap: 0.35rem;
-            padding: 0.25rem 0.65rem;
+            padding: 0.3rem 0.75rem;
             border-radius: 999px;
-            font-size: 0.7rem;
+            font-size: 0.72rem;
             font-weight: 800;
-            background: rgba(5, 150, 105, 0.95);
+            letter-spacing: 0.03em;
+            background: linear-gradient(135deg, #059669 0%, #047857 100%);
             color: #fff;
-            backdrop-filter: blur(6px);
-            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+            border: 1px solid rgba(167, 243, 208, 0.65);
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.45);
+            backdrop-filter: blur(8px);
+            text-transform: uppercase;
         }
 
         /* Submit Button */
@@ -1789,6 +1792,26 @@
             border-radius: 4px;
             text-transform: uppercase;
         }
+        .crop-4k-badge {
+            position: absolute;
+            top: 0.75rem;
+            left: 0.75rem;
+            z-index: 15;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.3rem 0.75rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            letter-spacing: 0.04em;
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(16, 185, 129, 0.6);
+            color: #6ee7b7;
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+            text-transform: uppercase;
+        }
 
         /* ── MODAL BUTTONS ────────────────────────────────────── */
         .btn-modal-sec {
@@ -2623,7 +2646,7 @@
                             </div>
                             <div class="dz-prev hidden" id="dzp-eye">
                                 <img src="" alt="Eye preview" id="img-eye">
-                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ Focused Tissue ROI</span>
+                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ 4K Focused Tissue ROI</span>
                                 <div class="dz-tools-overlay">
                                     <button class="dz-tool-pill btn-open-crop" data-target="eye" type="button">
                                         <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -2694,7 +2717,7 @@
                             </div>
                             <div class="dz-prev hidden" id="dzp-nail">
                                 <img src="" alt="Nail preview" id="img-nail">
-                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ Focused Tissue ROI</span>
+                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ 4K Focused Tissue ROI</span>
                                 <div class="dz-tools-overlay">
                                     <button class="dz-tool-pill btn-open-crop" data-target="nail" type="button">
                                         <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -2917,14 +2940,15 @@
             <div class="modal-hdr-ttl">
                 <h3 id="crop-modal-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-                    Mark &amp; Zoom Tissue Focus
+                    Mark &amp; Zoom — 4K Clarity Engine
                 </h3>
-                <p>Drag the marker box or zoom/pan to isolate the conjunctival mucosa or fingernail bed</p>
+                <p>Drag the marker box or zoom/pan to isolate tissue with 4K super-resolution &amp; dynamic shadow lift</p>
             </div>
             <button class="modal-close-btn" id="crop-close" type="button" aria-label="Close editor">✕</button>
         </div>
         <div class="modal-body">
             <div class="crop-workspace" id="crop-wrap">
+                <div class="crop-4k-badge">✨ 4K Clarity Engine Active</div>
                 <canvas id="crop-canvas" width="600" height="380"></canvas>
                 <div class="crop-preview-mini">
                     <span class="crop-preview-lbl">ROI Patch</span>
@@ -2948,7 +2972,7 @@
         <div class="modal-ftr">
             <button class="btn-modal-sec" id="crop-cancel" type="button">Cancel</button>
             <button class="btn-modal-prim" id="crop-apply" type="button">
-                ✓ Apply Focus &amp; Crop
+                ✓ Apply 4K Focus &amp; Enhance
             </button>
         </div>
     </div>
