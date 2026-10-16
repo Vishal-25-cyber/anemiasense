@@ -679,17 +679,6 @@ function initCameraModal() {
     stopStream();
   });
 
-    capturedFrameBlob = blob;
-    const url = URL.createObjectURL(blob);
-    frozenImg.src = url;
-    frozenImg.style.display = "block";
-    video.style.display = "none";
-    liveCtrls.classList.add("hidden");
-    reviewCtrls.classList.remove("hidden");
-    livePill.classList.add("hidden");
-    stopStream();
-  });
-
   // Retake
   retakeBtn.addEventListener("click", () => {
     startStream();
