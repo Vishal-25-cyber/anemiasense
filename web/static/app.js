@@ -370,87 +370,159 @@ function wireDropzone({ dzId, fiId, dziId, dzpId, imgId, rmId, roiBadgeId, btnId
   };
 }
 
-// ── 4K MEDICAL-GRADE CLARITY & DYNAMIC RANGE ENGINE ───────────
-function apply4KMedicalEnhancement(ctx, width, height) {
+// ── STUDIO HD MEDICAL CLARITY & DENOISING ENGINE ──────────────
+function applyStudioHDEnhancement(ctx, width, height) {
   try {
     const imgData = ctx.getImageData(0, 0, width, height);
     const data = imgData.data;
     const len = data.length;
-
-    // 1. Calculate luminance statistics across sample pixels
-    let minLum = 255, maxLum = 0, sumLum = 0, count = 0;
-    const step = Math.max(4, Math.floor(len / 100000)) * 4;
-    for (let i = 0; i < len; i += step) {
-      const lum = 0.299 * data[i] + 0.587 * data[i + 1] + 0.114 * data[i + 2];
-      if (lum < minLum) minLum = lum;
-      if (lum > maxLum) maxLum = lum;
-      sumLum += lum;
-      count++;
-    }
-    const avgLum = count > 0 ? (sumLum / count) : 128;
-
-    // 2. Adaptive Shadow Lifting & Dynamic Range Expansion
-    // Underexposed indoor webcams (avgLum < 130) get progressive gamma lift
-    let gamma = 1.0;
-    if (avgLum < 130) {
-      gamma = Math.max(0.68, 0.94 - (130 - avgLum) / 220); // Smooth gamma lift (0.68 to 0.94)
-    }
-
-    const lut = new Uint8Array(256);
-    const range = Math.max(1, maxLum - minLum);
-    const targetLow = Math.max(0, minLum * 0.35);
-    const targetHigh = Math.min(255, maxLum + (255 - maxLum) * 0.50);
-    const scale = (targetHigh - targetLow) / range;
-
-    for (let v = 0; v < 256; v++) {
-      let norm = (v - minLum) * scale + targetLow;
-      norm = Math.max(0, Math.min(255, norm));
-      const val = 255 * Math.pow(norm / 255, gamma);
-      lut[v] = Math.max(0, Math.min(255, Math.round(val)));
-    }
-
-    // Apply LUT & Capillary Vascular Saturation Boost
-    for (let i = 0; i < len; i += 4) {
-      let r = lut[data[i]];
-      let g = lut[data[i + 1]];
-      let b = lut[data[i + 2]];
-
-      const lum = 0.299 * r + 0.587 * g + 0.114 * b;
-      r = Math.min(255, Math.max(0, Math.round(lum + (r - lum) * 1.15)));
-      g = Math.min(255, Math.max(0, Math.round(lum + (g - lum) * 1.15)));
-      b = Math.min(255, Math.max(0, Math.round(lum + (b - lum) * 1.15)));
-
-      data[i]     = r;
-      data[i + 1] = g;
-      data[i + 2] = b;
-    }
-
-    // 3. Clinical 4K Edge-Preserving Micro-Vascular Sharpening
-    // Convolution kernel: Center = 2.44, Orthogonal neighbors = -0.36
-    const copy = new Uint8ClampedArray(data);
     const w = width;
     const h = height;
-    const kC = 2.44;
-    const kS = -0.36;
+    if (w < 4 || h < 4) return;
 
-    for (let y = 1; y < h - 1; y++) {
+    // Allocate working buffers for Y (luminance), U (chroma-blue), V (chroma-red)
+    const Y = new Float32Array(w * h);
+    const U = new Float32Array(w * h);
+    const V = new Float32Array(w * h);
+
+    let sumU = 0, sumV = 0, sumY = 0;
+    for (let i = 0, p = 0; i < len; i += 4, p++) {
+      const r = data[i];
+      const g = data[i + 1];
+      const b = data[i + 2];
+
+      const yVal = 0.299 * r + 0.587 * g + 0.114 * b;
+      const uVal = -0.14713 * r - 0.28886 * g + 0.436 * b;
+      const vVal = 0.615 * r - 0.51499 * g - 0.10001 * b;
+
+      Y[p] = yVal;
+      U[p] = uVal;
+      V[p] = vVal;
+
+      sumY += yVal;
+      sumU += uVal;
+      sumV += vVal;
+    }
+
+    const numPixels = w * h;
+    const avgY = sumY / numPixels;
+    const avgU = sumU / numPixels;
+    const avgV = sumV / numPixels;
+
+    // 1. Color Cast Neutralization: Softly center white balance so sclera is white
+    const uOffset = avgU * 0.40;
+    const vOffset = avgV * 0.30;
+
+    // 2. Spatial Chroma Denoising (3x3 smoothing on chroma channels)
+    // Completely wipes out speckles of blue/cyan/purple sensor noise
+    const cleanU = new Float32Array(numPixels);
+    const cleanV = new Float32Array(numPixels);
+
+    for (let y = 0; y < h; y++) {
       const rowOffset = y * w;
-      for (let x = 1; x < w - 1; x++) {
-        const idx = (rowOffset + x) << 2;
-        const topIdx = ((y - 1) * w + x) << 2;
-        const btmIdx = ((y + 1) * w + x) << 2;
-        const lftIdx = (rowOffset + x - 1) << 2;
-        const rgtIdx = (rowOffset + x + 1) << 2;
+      for (let x = 0; x < w; x++) {
+        const idx = rowOffset + x;
+        let uSum = 0, vSum = 0, count = 0;
 
-        data[idx]     = Math.min(255, Math.max(0, Math.round(kC * copy[idx]     + kS * (copy[topIdx]     + copy[btmIdx]     + copy[lftIdx]     + copy[rgtIdx]))));
-        data[idx + 1] = Math.min(255, Math.max(0, Math.round(kC * copy[idx + 1] + kS * (copy[topIdx + 1] + copy[btmIdx + 1] + copy[lftIdx + 1] + copy[rgtIdx + 1]))));
-        data[idx + 2] = Math.min(255, Math.max(0, Math.round(kC * copy[idx + 2] + kS * (copy[topIdx + 2] + copy[btmIdx + 2] + copy[lftIdx + 2] + copy[rgtIdx + 2]))));
+        for (let dy = -1; dy <= 1; dy++) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= h) continue;
+          const nRow = ny * w;
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx;
+            if (nx < 0 || nx >= w) continue;
+            const nIdx = nRow + nx;
+            uSum += U[nIdx];
+            vSum += V[nIdx];
+            count++;
+          }
+        }
+        cleanU[idx] = (uSum / count) - uOffset;
+        cleanV[idx] = (vSum / count) - vOffset;
+      }
+    }
+
+    // 3. Edge-Preserving Bilateral Deblocking on Luminance (Y)
+    // Smooths flat sensor noise and compression block boundaries while preserving real tissue contours
+    const cleanY = new Float32Array(numPixels);
+    const lumThreshold = 18.0;
+
+    for (let y = 0; y < h; y++) {
+      const rowOffset = y * w;
+      for (let x = 0; x < w; x++) {
+        const idx = rowOffset + x;
+        const centerLum = Y[idx];
+        let yWeightSum = 0;
+        let totalWeight = 0;
+
+        for (let dy = -1; dy <= 1; dy++) {
+          const ny = y + dy;
+          if (ny < 0 || ny >= h) continue;
+          const nRow = ny * w;
+          for (let dx = -1; dx <= 1; dx++) {
+            const nx = x + dx;
+            if (nx < 0 || nx >= w) continue;
+            const nIdx = nRow + nx;
+            const diff = Math.abs(Y[nIdx] - centerLum);
+            const weight = (diff < lumThreshold) ? 1.0 : (diff < 32.0 ? 0.35 : 0.05);
+            yWeightSum += Y[nIdx] * weight;
+            totalWeight += weight;
+          }
+        }
+        cleanY[idx] = yWeightSum / totalWeight;
+      }
+    }
+
+    // 4. Adaptive Gamma Shadow Lift on Luminance
+    let gamma = 1.0;
+    if (avgY < 135) {
+      gamma = Math.max(0.74, 0.96 - (135 - avgY) / 250);
+    }
+
+    // 5. Gentle, Restrained Micro-Contrast Sharpening
+    for (let y = 0; y < h; y++) {
+      const rowOffset = y * w;
+      for (let x = 0; x < w; x++) {
+        const idx = rowOffset + x;
+        const curY = cleanY[idx];
+
+        const topY = (y > 0) ? cleanY[idx - w] : curY;
+        const btmY = (y < h - 1) ? cleanY[idx + w] : curY;
+        const lftY = (x > 0) ? cleanY[idx - 1] : curY;
+        const rgtY = (x < w - 1) ? cleanY[idx + 1] : curY;
+        const localBlur = 0.25 * (topY + btmY + lftY + rgtY);
+
+        const highFreq = curY - localBlur;
+        const clampedHF = Math.max(-14, Math.min(14, highFreq * 0.32));
+        let finalY = curY + clampedHF;
+
+        if (gamma !== 1.0) {
+          finalY = 255 * Math.pow(Math.max(0, Math.min(255, finalY)) / 255, gamma);
+        }
+
+        const u = cleanU[idx];
+        const v = cleanV[idx];
+
+        let r = finalY + 1.13983 * v;
+        let g = finalY - 0.39465 * u - 0.58060 * v;
+        let b = finalY + 2.03211 * u;
+
+        // Gentle saturation vibrance (+8%)
+        const gray = 0.299 * r + 0.587 * g + 0.114 * b;
+        r = gray + (r - gray) * 1.08;
+        g = gray + (g - gray) * 1.08;
+        b = gray + (b - gray) * 1.08;
+
+        const pIdx = idx << 2;
+        data[pIdx]     = Math.min(255, Math.max(0, Math.round(r)));
+        data[pIdx + 1] = Math.min(255, Math.max(0, Math.round(g)));
+        data[pIdx + 2] = Math.min(255, Math.max(0, Math.round(b)));
       }
     }
 
     ctx.putImageData(imgData, 0, 0);
   } catch (err) {
-    console.warn("[4K Engine] Clarity filter notice:", err);
+    console.warn("[Studio HD Engine] Filter notice:", err);
   }
 }
 
@@ -462,6 +534,7 @@ let activeStream = null;
 let currentFacingMode = "environment"; // "user" or "environment"
 let cameraTargetSlot = "eye"; // "eye", "nail", "ce", "cn"
 let capturedFrameBlob = null;
+let camZoomFactor = 1.0;
 
 function initCameraModal() {
   const modal       = $("modal-cam");
@@ -480,6 +553,18 @@ function initCameraModal() {
 
   if (!modal) return;
 
+  // Zoom pills hookup
+  document.querySelectorAll(".cam-zoom-pill").forEach(pill => {
+    pill.addEventListener("click", () => {
+      document.querySelectorAll(".cam-zoom-pill").forEach(p => p.classList.remove("active"));
+      pill.classList.add("active");
+      camZoomFactor = parseFloat(pill.dataset.zoom || "1.0");
+      if (video) {
+        video.style.transform = `scale(${camZoomFactor})`;
+      }
+    });
+  });
+
   async function startStream() {
     if (activeStream) {
       activeStream.getTracks().forEach(t => t.stop());
@@ -487,12 +572,12 @@ function initCameraModal() {
     }
 
     try {
-      // Request 4K Ultra-HD video stream resolution
+      // Request HD video stream resolution
       const constraints = {
         video: {
           facingMode: currentFacingMode,
-          width:  { ideal: 3840, min: 1280 },
-          height: { ideal: 2160, min: 720 },
+          width:  { ideal: 1920, min: 1280 },
+          height: { ideal: 1080, min: 720 },
         },
         audio: false,
       };
@@ -500,17 +585,18 @@ function initCameraModal() {
       activeStream = await navigator.mediaDevices.getUserMedia(constraints);
       video.srcObject = activeStream;
       video.style.display = "block";
+      video.style.transform = `scale(${camZoomFactor})`;
       frozenImg.style.display = "none";
       liveCtrls.classList.remove("hidden");
       reviewCtrls.classList.add("hidden");
       livePill.classList.remove("hidden");
     } catch (err) {
-      console.warn("[Camera] 4K getUserMedia failed:", err);
-      // Fallback: try default without resolution constraints
+      console.warn("[Camera] HD getUserMedia failed:", err);
       try {
         activeStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: false });
         video.srcObject = activeStream;
         video.style.display = "block";
+        video.style.transform = `scale(${camZoomFactor})`;
         frozenImg.style.display = "none";
         liveCtrls.classList.remove("hidden");
         reviewCtrls.classList.add("hidden");
@@ -533,12 +619,18 @@ function initCameraModal() {
   function openCamera(target) {
     cameraTargetSlot = target;
     capturedFrameBlob = null;
+    camZoomFactor = 1.0;
+    document.querySelectorAll(".cam-zoom-pill").forEach((p, idx) => {
+      if (idx === 0) p.classList.add("active");
+      else p.classList.remove("active");
+    });
+    if (video) video.style.transform = "scale(1)";
 
     if (reticleTxt) {
       if (target === "nail" || target === "cn") {
-        reticleTxt.textContent = "Position Fingernail Bed Inside Guide";
+        reticleTxt.textContent = "Position Fingernail Bed Inside Guide (Use 2x for Close-up)";
       } else {
-        reticleTxt.textContent = "Position Lower Eyelid Mucosa Inside Guide";
+        reticleTxt.textContent = "Position Lower Eyelid Inside Guide (Use 2x for Close-up)";
       }
     }
 
@@ -551,58 +643,41 @@ function initCameraModal() {
     modal.classList.add("hidden");
   }
 
-  // Shutter action with 4K ImageCapture & Dynamic Enhancement
+  // Shutter action with Digital Zoom & Studio HD Clarity
   shutterBtn.addEventListener("click", async () => {
     if (!video || !activeStream) return;
 
-    let blob = null;
-    const track = (activeStream.getVideoTracks && activeStream.getVideoTracks().length > 0)
-      ? activeStream.getVideoTracks()[0]
-      : null;
+    const vw = video.videoWidth || 1280;
+    const vh = video.videoHeight || 720;
 
-    // 1. Try hardware 4K sensor still capture via ImageCapture API
-    if (window.ImageCapture && track) {
-      try {
-        const imageCap = new ImageCapture(track);
-        blob = await imageCap.takePhoto({
-          imageWidth: 3840,
-          imageHeight: 2160,
-        });
-      } catch (errCap) {
-        console.log("[Camera] ImageCapture fallback to canvas draw:", errCap);
-      }
-    }
+    // Grab center crop matching live viewfinder zoom factor
+    const cropW = Math.round(vw / camZoomFactor);
+    const cropH = Math.round(vh / camZoomFactor);
+    const cropX = Math.round((vw - cropW) / 2);
+    const cropY = Math.round((vh - cropH) / 2);
 
-    // 2. High-definition video canvas capture fallback
-    if (!blob) {
-      const w = Math.max(video.videoWidth || 1920, 1920);
-      const h = Math.max(video.videoHeight || 1080, 1080);
-      const offCanvas = document.createElement("canvas");
-      offCanvas.width = w;
-      offCanvas.height = h;
-      const ctx = offCanvas.getContext("2d");
-      ctx.imageSmoothingEnabled = true;
-      ctx.imageSmoothingQuality = "high";
-      ctx.drawImage(video, 0, 0, w, h);
-      apply4KMedicalEnhancement(ctx, w, h);
-      blob = await new Promise(res => offCanvas.toBlob(res, "image/png"));
-    } else {
-      // Also enhance the raw sensor still with 4K clarity
-      try {
-        const imgObj = new Image();
-        imgObj.src = URL.createObjectURL(blob);
-        await new Promise(r => { imgObj.onload = r; });
-        const offCanvas = document.createElement("canvas");
-        offCanvas.width = imgObj.naturalWidth;
-        offCanvas.height = imgObj.naturalHeight;
-        const ctx = offCanvas.getContext("2d");
-        ctx.imageSmoothingEnabled = true;
-        ctx.imageSmoothingQuality = "high";
-        ctx.drawImage(imgObj, 0, 0);
-        apply4KMedicalEnhancement(ctx, offCanvas.width, offCanvas.height);
-        blob = await new Promise(res => offCanvas.toBlob(res, "image/png"));
-      } catch (_) {}
-    }
+    const offCanvas = document.createElement("canvas");
+    offCanvas.width = cropW;
+    offCanvas.height = cropH;
+    const ctx = offCanvas.getContext("2d");
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = "high";
+    ctx.drawImage(video, cropX, cropY, cropW, cropH, 0, 0, cropW, cropH);
+
+    // Apply gentle Studio HD Denoise & natural white balance
+    applyStudioHDEnhancement(ctx, cropW, cropH);
+
+    const blob = await new Promise(res => offCanvas.toBlob(res, "image/png"));
+    capturedFrameBlob = blob;
+    const url = URL.createObjectURL(blob);
+    frozenImg.src = url;
+    frozenImg.style.display = "block";
+    video.style.display = "none";
+    liveCtrls.classList.add("hidden");
+    reviewCtrls.classList.remove("hidden");
+    livePill.classList.add("hidden");
+    stopStream();
+  });
 
     capturedFrameBlob = blob;
     const url = URL.createObjectURL(blob);
@@ -986,47 +1061,57 @@ function initCropModal() {
   window.addEventListener("touchmove", onPointerMove, { passive: true });
   window.addEventListener("touchend", onPointerUp, { passive: true });
 
-  // Apply button - Generates crystal 4K Ultra-HD output file
+  // Apply button - Generates Crystal Studio HD output file
   applyBtn.addEventListener("click", () => {
     const coords = getOriginalCropCoords();
-    const off = document.createElement("canvas");
 
-    const cropW = Math.round(coords.w);
-    const cropH = Math.round(coords.h);
+    const cropW = Math.max(16, Math.round(coords.w));
+    const cropH = Math.max(16, Math.round(coords.h));
 
-    // 4K Ultra-HD crisp scaling: Target at least 1800px on the longest side
-    let outW = cropW;
-    let outH = cropH;
-    const maxSide = Math.max(cropW, cropH);
-    const minTarget = 1800;
-    if (maxSide < minTarget && maxSide > 0) {
-      const scaleFactor = minTarget / maxSide;
-      outW = Math.round(cropW * scaleFactor);
-      outH = Math.round(cropH * scaleFactor);
-    }
+    // 1. First extract at native crop resolution and de-block & de-noise
+    const nativeCanvas = document.createElement("canvas");
+    nativeCanvas.width = cropW;
+    nativeCanvas.height = cropH;
+    const nativeCtx = nativeCanvas.getContext("2d");
+    nativeCtx.imageSmoothingEnabled = true;
+    nativeCtx.imageSmoothingQuality = "high";
 
-    off.width = outW;
-    off.height = outH;
-    const offCtx = off.getContext("2d");
-    offCtx.imageSmoothingEnabled = true;
-    offCtx.imageSmoothingQuality = "high";
-
-    offCtx.drawImage(
+    nativeCtx.drawImage(
       cropImg,
       coords.x, coords.y, coords.w, coords.h,
-      0, 0, outW, outH
+      0, 0, cropW, cropH
     );
 
-    // Apply medical-grade 4K Clarity: adaptive shadow lift, dynamic range & microvascular edge sharpening
-    apply4KMedicalEnhancement(offCtx, outW, outH);
+    // Clean noise, compression blocks, and chromatic noise at native resolution
+    applyStudioHDEnhancement(nativeCtx, cropW, cropH);
 
-    off.toBlob(blob => {
-      const croppedFile = new File([blob], `focused_tissue_4k_${Date.now()}.png`, { type: "image/png" });
+    // 2. High-Definition Super-Sampling (Target 1280px longest side for crystal HD)
+    const maxSide = Math.max(cropW, cropH);
+    const targetHD = 1280;
+    const scaleFactor = (maxSide < targetHD && maxSide > 0) ? (targetHD / maxSide) : 1.0;
+    const outW = Math.round(cropW * scaleFactor);
+    const outH = Math.round(cropH * scaleFactor);
+
+    const outCanvas = document.createElement("canvas");
+    outCanvas.width = outW;
+    outCanvas.height = outH;
+    const outCtx = outCanvas.getContext("2d");
+    outCtx.imageSmoothingEnabled = true;
+    outCtx.imageSmoothingQuality = "high";
+
+    // Draw the clean native crop scaled smoothly
+    outCtx.drawImage(nativeCanvas, 0, 0, outW, outH);
+
+    // Final subtle detail pass on the supersampled canvas
+    applyStudioHDEnhancement(outCtx, outW, outH);
+
+    outCanvas.toBlob(blob => {
+      const croppedFile = new File([blob], `focused_tissue_hd_${Date.now()}.png`, { type: "image/png" });
       const uploader = uploaders[activeCropTarget];
       if (uploader) {
         uploader.setFile(croppedFile, true); // true = show ROI badge
         uploader.setCropCoords("client_precropped");
-        showToast("Tissue area focused & enhanced in 4K Ultra-HD Quality!", "ok");
+        showToast("Tissue area focused & enhanced in Crystal HD Quality!", "ok");
       }
       closeCropModal();
     }, "image/png");

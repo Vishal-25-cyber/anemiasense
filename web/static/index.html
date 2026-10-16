@@ -735,9 +735,9 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
-            image-rendering: -webkit-optimize-contrast;
-            image-rendering: high-quality;
-            filter: contrast(1.08) saturate(1.10) brightness(1.03);
+            image-rendering: auto;
+            image-rendering: smooth;
+            filter: contrast(1.04) saturate(1.06) brightness(1.02);
             border-radius: var(--radl);
         }
         .dz-prev-rm {
@@ -1690,6 +1690,38 @@
             stroke: currentColor;
             fill: none;
             stroke-width: 2;
+        }
+        #cam-video {
+            transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+            transform-origin: center center;
+        }
+        .cam-zoom-pills {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+            background: rgba(15, 23, 42, 0.88);
+            padding: 0.28rem 0.55rem;
+            border-radius: 999px;
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(8px);
+        }
+        .cam-zoom-pill {
+            padding: 0.22rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #94a3b8;
+            background: transparent;
+            border: none;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .cam-zoom-pill.active, .cam-zoom-pill:hover {
+            background: var(--eye);
+            color: #fff;
+        }
+        .nail-panel .cam-zoom-pill.active, .nail-panel .cam-zoom-pill:hover {
+            background: var(--nail);
         }
 
         /* ── MARK & ZOOM CROP WORKSPACE ───────────────────────── */
@@ -2646,7 +2678,7 @@
                             </div>
                             <div class="dz-prev hidden" id="dzp-eye">
                                 <img src="" alt="Eye preview" id="img-eye">
-                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ 4K Focused Tissue ROI</span>
+                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ HD Focused Tissue ROI</span>
                                 <div class="dz-tools-overlay">
                                     <button class="dz-tool-pill btn-open-crop" data-target="eye" type="button">
                                         <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -2717,7 +2749,7 @@
                             </div>
                             <div class="dz-prev hidden" id="dzp-nail">
                                 <img src="" alt="Nail preview" id="img-nail">
-                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ 4K Focused Tissue ROI</span>
+                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ HD Focused Tissue ROI</span>
                                 <div class="dz-tools-overlay">
                                     <button class="dz-tool-pill btn-open-crop" data-target="nail" type="button">
                                         <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -2915,7 +2947,11 @@
                 <button class="cam-shutter-btn" id="cam-shutter" type="button" title="Take Photo">
                     <div class="cam-shutter-inner"></div>
                 </button>
-                <div style="width: 42px;"></div><!-- Spacer for balance -->
+                <div class="cam-zoom-pills" id="cam-zoom-pills">
+                    <button class="cam-zoom-pill active" data-zoom="1" type="button">1x</button>
+                    <button class="cam-zoom-pill" data-zoom="1.5" type="button">1.5x</button>
+                    <button class="cam-zoom-pill" data-zoom="2" type="button">2x</button>
+                </div>
             </div>
             <!-- Review Controls (Shown after snapping) -->
             <div class="cam-controls hidden" id="cam-review-ctrls" style="gap: 0.85rem;">
@@ -2940,15 +2976,15 @@
             <div class="modal-hdr-ttl">
                 <h3 id="crop-modal-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-                    Mark &amp; Zoom — 4K Clarity Engine
+                    Mark &amp; Zoom — Studio HD Clarity Engine
                 </h3>
-                <p>Drag the marker box or zoom/pan to isolate tissue with 4K super-resolution &amp; dynamic shadow lift</p>
+                <p>Drag the marker box or zoom/pan to isolate tissue with de-noising &amp; HD edge preservation</p>
             </div>
             <button class="modal-close-btn" id="crop-close" type="button" aria-label="Close editor">✕</button>
         </div>
         <div class="modal-body">
             <div class="crop-workspace" id="crop-wrap">
-                <div class="crop-4k-badge">✨ 4K Clarity Engine Active</div>
+                <div class="crop-4k-badge">✨ Studio HD Denoise &amp; Clarity Active</div>
                 <canvas id="crop-canvas" width="600" height="380"></canvas>
                 <div class="crop-preview-mini">
                     <span class="crop-preview-lbl">ROI Patch</span>
@@ -2972,7 +3008,7 @@
         <div class="modal-ftr">
             <button class="btn-modal-sec" id="crop-cancel" type="button">Cancel</button>
             <button class="btn-modal-prim" id="crop-apply" type="button">
-                ✓ Apply 4K Focus &amp; Enhance
+                ✓ Apply HD Focus &amp; Enhance
             </button>
         </div>
     </div>
