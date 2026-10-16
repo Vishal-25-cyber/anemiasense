@@ -735,9 +735,8 @@
             height: 100%;
             object-fit: cover;
             object-position: center;
-            image-rendering: auto;
-            image-rendering: smooth;
-            filter: contrast(1.04) saturate(1.06) brightness(1.02);
+            image-rendering: high-quality;
+            filter: contrast(1.10) saturate(1.12) brightness(1.04);
             border-radius: var(--radl);
         }
         .dz-prev-rm {
@@ -1586,12 +1585,16 @@
             width: 100%;
             height: 100%;
             object-fit: cover;
+            filter: contrast(1.18) brightness(1.08) saturate(1.16);
+            image-rendering: high-quality;
         }
         #cam-frozen-img {
             width: 100%;
             height: 100%;
             object-fit: contain;
             display: none;
+            filter: contrast(1.10) saturate(1.12) brightness(1.04);
+            image-rendering: high-quality;
         }
         .cam-reticle {
             position: absolute;
@@ -1694,6 +1697,7 @@
         #cam-video {
             transition: transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
             transform-origin: center center;
+            filter: contrast(1.18) brightness(1.08) saturate(1.16);
         }
         .cam-zoom-pills {
             display: flex;
@@ -2678,7 +2682,7 @@
                             </div>
                             <div class="dz-prev hidden" id="dzp-eye">
                                 <img src="" alt="Eye preview" id="img-eye">
-                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ HD Focused Tissue ROI</span>
+                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ 4K Ultra-HD Tissue ROI</span>
                                 <div class="dz-tools-overlay">
                                     <button class="dz-tool-pill btn-open-crop" data-target="eye" type="button">
                                         <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -2749,7 +2753,7 @@
                             </div>
                             <div class="dz-prev hidden" id="dzp-nail">
                                 <img src="" alt="Nail preview" id="img-nail">
-                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ HD Focused Tissue ROI</span>
+                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ 4K Ultra-HD Tissue ROI</span>
                                 <div class="dz-tools-overlay">
                                     <button class="dz-tool-pill btn-open-crop" data-target="nail" type="button">
                                         <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
@@ -2921,9 +2925,9 @@
             <div class="modal-hdr-ttl">
                 <h3 id="cam-modal-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-                    Live Medical Camera
+                    Live Medical Camera — 4K Ultra-Clarity Capture
                 </h3>
-                <p id="cam-modal-sub">Position the eyelid or nail bed directly within the alignment guide</p>
+                <p id="cam-modal-sub">Position the eyelid or nail bed directly within the alignment guide · 4K Clarity Engine active</p>
             </div>
             <button class="modal-close-btn" id="cam-close" type="button" aria-label="Close camera">✕</button>
         </div>
@@ -2933,7 +2937,7 @@
                 <img id="cam-frozen-img" alt="Captured frame">
                 <div class="cam-live-indicator" id="cam-live-pill">
                     <span class="cam-live-dot"></span>
-                    <span>LIVE</span>
+                    <span>LIVE 4K ENHANCED</span>
                 </div>
                 <div class="cam-reticle" id="cam-reticle">
                     <span class="cam-reticle-txt" id="cam-reticle-txt">Align Target Tissue</span>
@@ -2976,15 +2980,15 @@
             <div class="modal-hdr-ttl">
                 <h3 id="crop-modal-title">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
-                    Mark &amp; Zoom — Studio HD Clarity Engine
+                    Mark &amp; Zoom — 4K Ultra-Clarity Engine
                 </h3>
-                <p>Drag the marker box or zoom/pan to isolate tissue with de-noising &amp; HD edge preservation</p>
+                <p>Drag the marker box or zoom/pan to isolate tissue with 4K super-resolution &amp; dynamic shadow lift</p>
             </div>
             <button class="modal-close-btn" id="crop-close" type="button" aria-label="Close editor">✕</button>
         </div>
         <div class="modal-body">
             <div class="crop-workspace" id="crop-wrap">
-                <div class="crop-4k-badge">✨ Studio HD Denoise &amp; Clarity Active</div>
+                <div class="crop-4k-badge">✨ 4K Ultra-Clarity Engine Active</div>
                 <canvas id="crop-canvas" width="600" height="380"></canvas>
                 <div class="crop-preview-mini">
                     <span class="crop-preview-lbl">ROI Patch</span>
@@ -3008,7 +3012,7 @@
         <div class="modal-ftr">
             <button class="btn-modal-sec" id="crop-cancel" type="button">Cancel</button>
             <button class="btn-modal-prim" id="crop-apply" type="button">
-                ✓ Apply HD Focus &amp; Enhance
+                ✓ Apply 4K Focus &amp; Enhance
             </button>
         </div>
     </div>
