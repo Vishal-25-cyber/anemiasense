@@ -1,0 +1,79 @@
+[
+  {
+    "id": "Italy_115",
+    "modality": "eye",
+    "name": "Case A — Normal Conjunctiva (Male, 43y)",
+    "gender": "M",
+    "age": 43,
+    "true_hb": 15.4,
+    "expected_status": "Normal",
+    "filename": "sample_normal_male.png",
+    "image_url": "/samples/sample_normal_male.png"
+  },
+  {
+    "id": "India_58",
+    "modality": "eye",
+    "name": "Case B — Mild Anemia Conjunctiva (Male, 36y)",
+    "gender": "M",
+    "age": 36,
+    "true_hb": 12.5,
+    "expected_status": "Mild Anemia",
+    "filename": "sample_mild_male.png",
+    "image_url": "/samples/sample_mild_male.png"
+  },
+  {
+    "id": "India_45",
+    "modality": "eye",
+    "name": "Case C — Moderate Anemia Conjunctiva (Female, 27y)",
+    "gender": "F",
+    "age": 27,
+    "true_hb": 10.0,
+    "expected_status": "Moderate Anemia",
+    "filename": "sample_moderate_female.png",
+    "image_url": "/samples/sample_moderate_female.png"
+  },
+  {
+    "id": "Italy_2",
+    "modality": "eye",
+    "name": "Case D — Moderate Anemia Conjunctiva (Female, 77y)",
+    "gender": "F",
+    "age": 77,
+    "true_hb": 10.2,
+    "expected_status": "Moderate Anemia",
+    "filename": "sample_moderate_senior.png",
+    "image_url": "/samples/sample_moderate_senior.png"
+  },
+  {
+    "id": "Nail_Mild_01",
+    "modality": "nail",
+    "name": "Nail Case 1 — Mild Anemia Range (Male, 30y)",
+    "gender": "M",
+    "age": 30,
+    "estimated_hb": 11.47,
+    "expected_status": "Mild Anemia",
+    "filename": "sample_nail_mild_male.png",
+    "image_url": "/samples/sample_nail_mild_male.png"
+  },
+  {
+    "id": "Nail_Severe_02",
+    "modality": "nail",
+    "name": "Nail Case 2 — Severe Pallor Range (Female, 28y)",
+    "gender": "F",
+    "age": 28,
+    "estimated_hb": 7.46,
+    "expected_status": "Severe Anemia",
+    "filename": "sample_nail_severe_female.png",
+    "image_url": "/samples/sample_nail_severe_female.png"
+  },
+  {
+    "id": "Nail_Mod_03",
+    "modality": "nail",
+    "name": "Nail Case 3 — Moderate Anemia Range (Female, 35y)",
+    "gender": "F",
+    "age": 35,
+    "estimated_hb": 9.11,
+    "expected_status": "Moderate Anemia",
+    "filename": "sample_nail_moderate.png",
+    "image_url": "/samples/sample_nail_moderate.png"
+  }
+]
