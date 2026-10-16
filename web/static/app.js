@@ -268,6 +268,7 @@ function wireDropzone({ dzId, fiId, dziId, dzpId, imgId, rmId, roiBadgeId, btnId
   }
 
   let currentFile = null;
+  let originalSourceFile = null;
   let currentCropCoords = null;
 
   function setFile(file, isCropped = false) {
@@ -282,6 +283,11 @@ function wireDropzone({ dzId, fiId, dziId, dzpId, imgId, rmId, roiBadgeId, btnId
     }
 
     currentFile = file;
+    if (!isCropped) {
+      originalSourceFile = file;
+      currentCropCoords = null;
+    }
+
     const url = URL.createObjectURL(file);
     if (img) img.src = url;
     if (dzi) dzi.classList.add("hidden");
@@ -298,6 +304,7 @@ function wireDropzone({ dzId, fiId, dziId, dzpId, imgId, rmId, roiBadgeId, btnId
 
   function clearFile() {
     currentFile = null;
+    originalSourceFile = null;
     currentCropCoords = null;
     if (img) img.src = "";
     if (dzp) dzp.classList.add("hidden");
@@ -353,6 +360,7 @@ function wireDropzone({ dzId, fiId, dziId, dzpId, imgId, rmId, roiBadgeId, btnId
 
   return {
     getFile: () => currentFile,
+    getOriginalFile: () => originalSourceFile || currentFile,
     setFile: setFile,
     clear: clearFile,
     getCropCoords: () => currentCropCoords,
@@ -862,14 +870,13 @@ function initCropModal() {
     const cropW = Math.round(coords.w);
     const cropH = Math.round(coords.h);
 
-    // Maintain pristine pixel fidelity:
-    // If cropped region is smaller than 640px, proportionally scale up to 640px minimum with high bicubic smoothing
-    // If cropped region is already >= 640px, keep full 1:1 original crisp pixels
+    // Ultra-HD crisp scaling: Target at least 800px on the longest side
     let outW = cropW;
     let outH = cropH;
     const maxSide = Math.max(cropW, cropH);
-    if (maxSide < 640 && maxSide > 0) {
-      const scaleFactor = 640 / maxSide;
+    const minTarget = 800;
+    if (maxSide < minTarget && maxSide > 0) {
+      const scaleFactor = minTarget / maxSide;
       outW = Math.round(cropW * scaleFactor);
       outH = Math.round(cropH * scaleFactor);
     }
@@ -886,16 +893,38 @@ function initCropModal() {
       0, 0, outW, outH
     );
 
+    // Dynamic contrast & brightness auto-optimization for clinical HD clarity
+    // Especially helpful for webcam captures taken in ambient/dim indoor lighting
+    try {
+      const imgData = offCtx.getImageData(0, 0, outW, outH);
+      const d = imgData.data;
+      let minLum = 255, maxLum = 0;
+      for (let i = 0; i < d.length; i += 16) {
+        const lum = 0.299 * d[i] + 0.587 * d[i+1] + 0.114 * d[i+2];
+        if (lum < minLum) minLum = lum;
+        if (lum > maxLum) maxLum = lum;
+      }
+      // If image is dark or flat (typical of webcams in low indoor lighting), enhance contrast & brightness
+      if (maxLum > minLum && (maxLum < 220 || minLum > 30)) {
+        const range = maxLum - minLum;
+        const targetLow = Math.max(0, minLum - 10);
+        const targetHigh = Math.min(255, maxLum + (255 - maxLum) * 0.45);
+        const scale = (targetHigh - targetLow) / range;
+        for (let i = 0; i < d.length; i += 4) {
+          d[i]   = Math.min(255, Math.max(0, (d[i] - minLum) * scale + targetLow));
+          d[i+1] = Math.min(255, Math.max(0, (d[i+1] - minLum) * scale + targetLow));
+          d[i+2] = Math.min(255, Math.max(0, (d[i+2] - minLum) * scale + targetLow));
+        }
+        offCtx.putImageData(imgData, 0, 0);
+      }
+    } catch (_) {}
+
     off.toBlob(blob => {
       const croppedFile = new File([blob], `focused_tissue_${Date.now()}.png`, { type: "image/png" });
       const uploader = uploaders[activeCropTarget];
       if (uploader) {
         uploader.setFile(croppedFile, true); // true = show ROI badge
-        const normX = coords.x / cropImg.naturalWidth;
-        const normY = coords.y / cropImg.naturalHeight;
-        const normW = coords.w / cropImg.naturalWidth;
-        const normH = coords.h / cropImg.naturalHeight;
-        uploader.setCropCoords(`${normX.toFixed(4)},${normY.toFixed(4)},${normW.toFixed(4)},${normH.toFixed(4)}`);
+        uploader.setCropCoords("client_precropped");
         showToast("Tissue area focused & marked successfully (Crystal HD Quality)!", "ok");
       }
       closeCropModal();
@@ -916,7 +945,7 @@ function openCropModal(targetSlot) {
 
   if (!modal || !canvas || !uploader) return;
 
-  const file = uploader.getFile();
+  const file = (typeof uploader.getOriginalFile === "function") ? uploader.getOriginalFile() : uploader.getFile();
   if (!file) {
     showToast("Please upload or take a photo first before marking.", "err");
     return;

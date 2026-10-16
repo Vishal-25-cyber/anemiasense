@@ -721,22 +721,24 @@
         .dz-prev {
             position: absolute;
             inset: 0;
-            background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+            background: #090d16;
             display: flex;
             align-items: center;
             justify-content: center;
             z-index: 6;
             overflow: hidden;
             border-radius: var(--radl);
+            box-shadow: inset 0 0 24px rgba(0, 0, 0, 0.6);
         }
         .dz-prev img {
-            max-width: 100%;
-            max-height: 100%;
-            object-fit: contain;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            object-position: center;
             image-rendering: -webkit-optimize-contrast;
             image-rendering: high-quality;
-            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
-            border-radius: 6px;
+            filter: contrast(1.05) saturate(1.06);
+            border-radius: var(--radl);
         }
         .dz-prev-rm {
             position: absolute;

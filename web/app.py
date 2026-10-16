@@ -136,8 +136,11 @@ def preprocess_eye_image(img_rgb: np.ndarray, target_size=(224, 224),
     crop = None
     focus_method = "full_frame"
 
-    # Strategy 0: Already a small/square focused patch
-    if (h_orig == target_size[1] and w_orig == target_size[0]) or (h_orig == w_orig and h_orig <= 256):
+    # Strategy 0: Client pre-cropped focused patch (Crystal HD ROI)
+    if crop_coords == "client_precropped" or crop_coords == "precropped":
+        crop = img_rgb
+        focus_method = "client_interactive_focus"
+    elif (h_orig == target_size[1] and w_orig == target_size[0]) or (h_orig == w_orig and h_orig <= 256):
         crop = img_rgb
         focus_method = "client_focused_loupe_patch"
 
