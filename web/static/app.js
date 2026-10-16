@@ -1221,7 +1221,7 @@ function renderEyeResult(data, targetPanelId) {
     </div>
 
     <div class="res-body">
-      <div class="res-model-lbl">Eye Conjunctiva — MobileNetV2 Dual-Head</div>
+      <div class="res-model-lbl">Eye Conjunctiva Analysis</div>
 
       <div class="hb-row">
         <span class="hb-val">${hbVal}</span>
@@ -1327,7 +1327,7 @@ function renderNailResult(data, targetPanelId) {
     </div>
 
     <div class="res-body">
-      <div class="res-model-lbl" style="color:var(--nail);">Nail Bed — MobileNetV3Large Hb Regression</div>
+      <div class="res-model-lbl" style="color:var(--nail);">Nail Bed Analysis</div>
 
       <div class="hb-row">
         <span class="hb-val">${hbVal}</span>
@@ -1546,7 +1546,7 @@ function openReportModal(doc) {
     </div>
 
     <div class="rep-sign-strip">
-      <div>Algorithm: Dual-Model MobileNetV2 + MobileNetV3Large</div>
+      <div>Analysis: Dual-Modality Non-Invasive AI Screening</div>
       <div>System Verified: 2026-10-10 • Database ID: ${escHtml(doc._id || doc.record_id || repId)}</div>
     </div>
   `;
