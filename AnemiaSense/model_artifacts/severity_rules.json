@@ -1,0 +1,50 @@
+{
+    "standard": "WHO Hemoglobin Threshold Guidelines",
+    "supported_demographics": {
+        "adult_male": {
+            "age_min": 15,
+            "anemia_threshold_g_dl": 13.0,
+            "bands": {
+                "normal": [
+                    13.0,
+                    25.0
+                ],
+                "mild": [
+                    11.0,
+                    12.9
+                ],
+                "moderate": [
+                    8.0,
+                    10.9
+                ],
+                "severe": [
+                    0.0,
+                    7.9
+                ]
+            }
+        },
+        "adult_female_non_pregnant": {
+            "age_min": 15,
+            "anemia_threshold_g_dl": 12.0,
+            "bands": {
+                "normal": [
+                    12.0,
+                    25.0
+                ],
+                "mild": [
+                    11.0,
+                    11.9
+                ],
+                "moderate": [
+                    8.0,
+                    10.9
+                ],
+                "severe": [
+                    0.0,
+                    7.9
+                ]
+            }
+        }
+    },
+    "clinical_note": "Nutritional diet advice applies to mild cases; moderate and severe anemia mandate clinical physician evaluation."
+}

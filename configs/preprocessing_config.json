@@ -1,0 +1,29 @@
+{
+    "input_resolution": [224, 224],
+    "input_channels": 3,
+    "color_space": "RGB",
+    "normalization": {
+        "framework": "MobileNetV2",
+        "scale": 0.00784313725490196,
+        "offset": -1.0,
+        "target_range": [-1.0, 1.0]
+    },
+    "roi_extraction": {
+        "source": "conjunctiva_mask_or_bounding_box",
+        "margin_pixels": 5,
+        "background_handling": "neutral_black_standardization",
+        "aspect_ratio_preservation": "square_padding"
+    },
+    "quality_assurance": {
+        "blur_laplacian_variance_min": 20.0,
+        "brightness_luminance_range": [20.0, 235.0],
+        "glare_percentage_max": 15.0
+    },
+    "augmentation": {
+        "horizontal_flip": true,
+        "rotation_degrees_max": 5.0,
+        "brightness_jitter_range": [0.96, 1.04],
+        "hue_shift_allowed": false,
+        "rationale": "Hue and saturation shifts alter natural erythema and tissue pallor, which degrades hemoglobin estimation fidelity."
+    }
+}

@@ -1,0 +1,2992 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AnemiaSense — AI-Based Non-Invasive Anemia Screening</title>
+    <meta name="description" content="Non-invasive hemoglobin screening using Eye Conjunctiva (MobileNetV2) and Nail Bed (MobileNetV3Large) AI analysis with Live Camera capture and Tissue Mark & Zoom tool.">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,400&display=swap" rel="stylesheet">
+    <style>
+        /* ── DESIGN TOKENS ────────────────────────────────────── */
+        :root {
+            --eye:   #0891b2;
+            --eye2:  #0e7490;
+            --eye-bg:#ecfeff;
+            --nail:  #7c3aed;
+            --nail2: #6d28d9;
+            --nail-bg:#f5f3ff;
+            --comb:  #059669;
+            --comb2: #047857;
+            --ok:    #059669;
+            --warn:  #d97706;
+            --orange:#ea580c;
+            --err:   #dc2626;
+
+            --g50:   #f8fafc;
+            --g100:  #f1f5f9;
+            --g200:  #e2e8f0;
+            --g300:  #cbd5e1;
+            --g400:  #94a3b8;
+            --g500:  #64748b;
+            --g600:  #475569;
+            --g700:  #334155;
+            --g800:  #1e293b;
+            --g900:  #0f172a;
+
+            --rad-sm: 0.5rem;
+            --rad:    0.75rem;
+            --radl:   1.125rem;
+            --radxl:  1.5rem;
+
+            --sh-sm: 0 1px 3px rgba(0,0,0,0.06), 0 1px 2px rgba(0,0,0,0.04);
+            --sh:    0 4px 16px rgba(15,23,42,0.08);
+            --shl:   0 12px 32px rgba(15,23,42,0.12);
+
+            --hdr-h: 68px;
+            --maxw:  1200px;
+        }
+
+        /* ── RESET & BASE ─────────────────────────────────────── */
+        *, *::before, *::after {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        html {
+            scroll-behavior: smooth;
+        }
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: #f8fafc;
+            color: var(--g800);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        img {
+            display: block;
+            max-width: 100%;
+        }
+        button {
+            cursor: pointer;
+            font-family: inherit;
+            border: none;
+            background: none;
+        }
+        a {
+            text-decoration: none;
+            color: inherit;
+        }
+        svg {
+            display: inline-block;
+            vertical-align: middle;
+            flex-shrink: 0;
+            max-width: 100%;
+        }
+
+        /* ── HEADER ───────────────────────────────────────────── */
+        .hdr {
+            position: sticky;
+            top: 0;
+            z-index: 300;
+            height: var(--hdr-h);
+            background: rgba(255, 255, 255, 0.94);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--g200);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.04);
+        }
+        .hdr-inner {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 0 1.5rem;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.5rem;
+        }
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            cursor: pointer;
+        }
+        .brand-ico {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+            background: linear-gradient(135deg, var(--eye), var(--eye2));
+            border-radius: 11px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.3);
+        }
+        .brand-ico svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            fill: none;
+            stroke-width: 2;
+        }
+        .brand-name {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--g900);
+            letter-spacing: -0.02em;
+            line-height: 1.2;
+        }
+        .brand-sub {
+            font-size: 0.68rem;
+            color: var(--g500);
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            display: block;
+        }
+        .nav {
+            display: flex;
+            align-items: center;
+            gap: 0.35rem;
+        }
+        .nav a {
+            padding: 0.45rem 1rem;
+            border-radius: var(--rad);
+            font-size: 0.88rem;
+            font-weight: 500;
+            color: var(--g600);
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .nav a:hover {
+            background: var(--g100);
+            color: var(--g900);
+        }
+        .nav a.active {
+            background: var(--eye-bg);
+            color: var(--eye2);
+            font-weight: 700;
+        }
+
+        /* ── SECTION VISIBILITY ───────────────────────────────── */
+        .pg {
+            min-height: calc(100vh - var(--hdr-h));
+        }
+        .sec {
+            display: none;
+        }
+        .sec.on {
+            display: block;
+        }
+
+        /* ── HERO SECTION ─────────────────────────────────────── */
+        #home {
+            background: linear-gradient(145deg, #0b1329 0%, #0c4a6e 55%, #0d423e 100%);
+            color: #fff;
+            width: 100%;
+        }
+        .hero-wrap {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 5rem 1.5rem 4.5rem;
+            display: grid;
+            grid-template-columns: 1.1fr 410px;
+            align-items: center;
+            gap: 3.5rem;
+        }
+        .hero-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.6rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            margin-bottom: 1.5rem;
+        }
+        .beacon {
+            width: 9px;
+            height: 9px;
+            border-radius: 50%;
+            background: #22d3ee;
+            box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25);
+            animation: pulse 2s ease-in-out infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { box-shadow: 0 0 0 4px rgba(34, 211, 238, 0.25); }
+            50%      { box-shadow: 0 0 0 8px rgba(34, 211, 238, 0.06); }
+        }
+        .badge-txt {
+            font-size: 0.75rem;
+            font-weight: 700;
+            color: #7dd3fc;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+        }
+        .hero-h1 {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: clamp(2.2rem, 4.2vw, 3.2rem);
+            font-weight: 600;
+            line-height: 1.15;
+            color: #fff;
+            letter-spacing: -0.025em;
+            margin-bottom: 1.25rem;
+        }
+        .hero-h1 span {
+            color: #67e8f9;
+        }
+        .hero-lead {
+            font-size: 1.05rem;
+            color: #bae6fd;
+            line-height: 1.75;
+            margin-bottom: 2rem;
+            max-width: 530px;
+        }
+        .hero-ctas {
+            display: flex;
+            gap: 1rem;
+            flex-wrap: wrap;
+            margin-bottom: 2rem;
+        }
+        .btn-prim {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            background: linear-gradient(135deg, var(--eye), var(--eye2));
+            color: #fff;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.75rem 1.65rem;
+            border-radius: var(--rad);
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.4);
+            transition: transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .btn-prim:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 22px rgba(8, 145, 178, 0.55);
+        }
+        .btn-prim svg {
+            width: 16px;
+            height: 16px;
+        }
+        .btn-ghost {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.55rem;
+            background: rgba(255, 255, 255, 0.1);
+            color: #e0f2fe;
+            font-weight: 600;
+            font-size: 0.95rem;
+            padding: 0.75rem 1.65rem;
+            border-radius: var(--rad);
+            border: 1px solid rgba(255, 255, 255, 0.22);
+            transition: background 0.18s ease, transform 0.18s ease;
+        }
+        .btn-ghost:hover {
+            background: rgba(255, 255, 255, 0.18);
+            transform: translateY(-2px);
+        }
+        .hero-note {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.65rem;
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: var(--rad);
+            padding: 0.7rem 1.1rem;
+            max-width: 530px;
+        }
+        .hero-note-ico {
+            color: #7dd3fc;
+            font-size: 0.95rem;
+            margin-top: 1px;
+        }
+        .hero-note p {
+            font-size: 0.8rem;
+            color: #bae6fd;
+            line-height: 1.5;
+        }
+        .hero-note strong {
+            color: #e0f2fe;
+        }
+
+        /* Hero Right Cards */
+        .hero-cards {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .feat-card {
+            background: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.14);
+            border-radius: var(--radl);
+            padding: 1.25rem 1.35rem;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            transition: background 0.2s ease, transform 0.2s ease;
+        }
+        .feat-card:hover {
+            background: rgba(255, 255, 255, 0.13);
+            transform: translateY(-2px);
+        }
+        .feat-card-top {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+            margin-bottom: 0.45rem;
+        }
+        .feat-ico {
+            width: 38px;
+            height: 38px;
+            min-width: 38px;
+            min-height: 38px;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .feat-ico svg {
+            width: 20px;
+            height: 20px;
+            stroke: white;
+            fill: none;
+            stroke-width: 1.8;
+            stroke-linecap: round;
+        }
+        .feat-ico.eye  { background: linear-gradient(135deg, var(--eye), var(--eye2)); }
+        .feat-ico.nail { background: linear-gradient(135deg, var(--nail), var(--nail2)); }
+        .feat-ico.both { background: linear-gradient(135deg, var(--comb), var(--comb2)); }
+        .feat-card-top h3 {
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .feat-badge {
+            margin-left: auto;
+            font-size: 0.65rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.16);
+            color: #e0f2fe;
+            text-transform: uppercase;
+        }
+        .feat-card p {
+            font-size: 0.8rem;
+            color: #93c5fd;
+            line-height: 1.55;
+        }
+
+        /* ── SCREENING SECTION ────────────────────────────────── */
+        #screening {
+            background: #f8fafc;
+        }
+        .scr-wrap {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 3rem 1.5rem 5rem;
+        }
+        .scr-title-row {
+            text-align: center;
+            margin-bottom: 2rem;
+        }
+        .scr-title {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: clamp(1.8rem, 3vw, 2.5rem);
+            font-weight: 600;
+            color: var(--g900);
+            letter-spacing: -0.02em;
+            margin-bottom: 0.4rem;
+        }
+        .scr-sub {
+            font-size: 0.95rem;
+            color: var(--g500);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Patient Bar */
+        .pt-bar {
+            background: #fff;
+            border: 1px solid var(--g200);
+            border-radius: var(--radl);
+            padding: 1.1rem 1.6rem;
+            margin-bottom: 1.5rem;
+            box-shadow: var(--sh-sm);
+            display: flex;
+            gap: 1.25rem;
+            flex-wrap: wrap;
+            align-items: flex-end;
+        }
+        .pt-field {
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+            flex: 1;
+            min-width: 120px;
+        }
+        .pt-lbl {
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: var(--g500);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+        .pt-inp {
+            padding: 0.55rem 0.85rem;
+            font-size: 0.92rem;
+            color: var(--g800);
+            background: var(--g50);
+            border: 1.5px solid var(--g200);
+            border-radius: var(--rad);
+            outline: none;
+            transition: border-color 0.18s ease, box-shadow 0.18s ease;
+        }
+        .pt-inp:focus {
+            border-color: var(--eye);
+            box-shadow: 0 0 0 3px rgba(8, 145, 178, 0.12);
+        }
+        .pt-inp.err-field {
+            border-color: #ef4444 !important;
+            background: #fff5f5 !important;
+            box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.2) !important;
+        }
+
+        /* Tabs */
+        .tabs {
+            display: flex;
+            gap: 0.5rem;
+            background: var(--g200);
+            padding: 0.4rem;
+            border-radius: var(--radl);
+            margin-bottom: 1.75rem;
+            flex-wrap: wrap;
+        }
+        .tab {
+            flex: 1;
+            min-width: 150px;
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            padding: 0.75rem 1.1rem;
+            border-radius: var(--rad);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--g500);
+            transition: all 0.2s ease;
+        }
+        .tab:hover:not(.on) {
+            background: rgba(255, 255, 255, 0.6);
+            color: var(--g800);
+        }
+        .tab.on {
+            background: #fff;
+            color: var(--g900);
+            font-weight: 700;
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.08);
+        }
+        .tab-ico {
+            width: 18px;
+            height: 18px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+        }
+        .tab-label {
+            flex: 1;
+            text-align: left;
+        }
+        .tab-arch {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: var(--g400);
+        }
+        #t-eye.on .tab-arch  { color: var(--eye); }
+        #t-nail.on .tab-arch { color: var(--nail); }
+        #t-comb.on .tab-arch { color: var(--comb); }
+
+        /* Panels */
+        .panel {
+            display: none;
+        }
+        .panel.on {
+            display: block;
+        }
+
+        /* Two-column layout */
+        .two-col {
+            display: grid;
+            grid-template-columns: 390px minmax(0, 1fr);
+            gap: 2rem;
+            align-items: start;
+        }
+        .two-col > div:first-child {
+            position: sticky;
+            top: calc(var(--hdr-h) + 1.25rem);
+            z-index: 10;
+        }
+
+        /* Upload Card */
+        .upcard {
+            background: #fff;
+            border-radius: var(--radxl);
+            border: 1px solid var(--g200);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+        .upcard-hdr {
+            display: flex;
+            align-items: flex-start;
+            gap: 1rem;
+            padding: 1.4rem 1.5rem 1.1rem;
+            border-bottom: 1px solid var(--g100);
+        }
+        .upcard-ico {
+            width: 44px;
+            height: 44px;
+            min-width: 44px;
+            min-height: 44px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .upcard-ico svg {
+            width: 22px;
+            height: 22px;
+            stroke: white;
+            fill: none;
+            stroke-width: 1.8;
+        }
+        .upcard-ico.eye  { background: linear-gradient(135deg, var(--eye), var(--eye2)); }
+        .upcard-ico.nail { background: linear-gradient(135deg, var(--nail), var(--nail2)); }
+        .upcard-ttl {
+            font-size: 1rem;
+            font-weight: 700;
+            color: var(--g900);
+            margin-bottom: 0.25rem;
+        }
+        .upcard-sub {
+            font-size: 0.8rem;
+            color: var(--g500);
+            line-height: 1.45;
+        }
+
+        .upcard-guide {
+            padding: 0.8rem 1.5rem;
+            border-bottom: 1px solid var(--g100);
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+            background: var(--g50);
+        }
+        .gi {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            font-size: 0.8rem;
+            color: var(--g600);
+        }
+        .dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            margin-top: 6px;
+        }
+        .dot.g { background: var(--ok); }
+        .dot.r { background: var(--err); }
+
+        /* Dropzone */
+        .dz {
+            position: relative;
+            margin: 1.25rem 1.5rem 0.75rem;
+            border: 2px dashed var(--g300);
+            border-radius: var(--radl);
+            min-height: 220px;
+            cursor: pointer;
+            overflow: hidden;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #fff;
+            transition: border-color 0.2s ease, background 0.2s ease;
+        }
+        .dz:hover, .dz.over {
+            border-color: var(--eye);
+            background: var(--eye-bg);
+        }
+        .nail-panel .dz:hover, .nail-panel .dz.over {
+            border-color: var(--nail);
+            background: var(--nail-bg);
+        }
+        .dz input[type=file] {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0;
+            cursor: pointer;
+            z-index: 5;
+        }
+        .dz-inner {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 1.5rem;
+            text-align: center;
+            pointer-events: none;
+        }
+        .dz-svg {
+            width: 42px;
+            height: 42px;
+            color: var(--g400);
+        }
+        .dz-txt {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: var(--g700);
+        }
+        .dz-cta {
+            color: var(--eye);
+            font-weight: 700;
+            text-decoration: underline;
+        }
+        .nail-panel .dz-cta {
+            color: var(--nail);
+        }
+        .dz-hint {
+            font-size: 0.74rem;
+            color: var(--g400);
+        }
+
+        /* Dropzone Dual Action Row (Live Camera + Browse) */
+        .dz-btn-row {
+            display: flex;
+            gap: 0.6rem;
+            padding: 0 1.5rem 1.1rem;
+        }
+        .dz-action-btn {
+            flex: 1;
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            padding: 0.6rem 0.95rem;
+            border-radius: var(--rad);
+            font-size: 0.84rem;
+            font-weight: 600;
+            color: var(--g700);
+            background: var(--g50);
+            border: 1.5px solid var(--g200);
+            transition: all 0.16s ease;
+        }
+        .dz-action-btn:hover {
+            background: #fff;
+            border-color: var(--eye);
+            color: var(--eye2);
+            box-shadow: 0 2px 8px rgba(8, 145, 178, 0.15);
+            transform: translateY(-1px);
+        }
+        .nail-panel .dz-action-btn:hover {
+            border-color: var(--nail);
+            color: var(--nail2);
+            box-shadow: 0 2px 8px rgba(124, 58, 237, 0.15);
+        }
+        .dz-action-btn.cam-btn {
+            background: #ecfeff;
+            border-color: #a5f3fc;
+            color: var(--eye2);
+        }
+        .nail-panel .dz-action-btn.cam-btn {
+            background: #f5f3ff;
+            border-color: #ddd6fe;
+            color: var(--nail2);
+        }
+        .dz-action-btn svg {
+            width: 17px;
+            height: 17px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 1.8;
+        }
+
+        /* Preview Container */
+        .dz-prev {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, #1e293b 0%, #090d16 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 6;
+            overflow: hidden;
+            border-radius: var(--radl);
+        }
+        .dz-prev img {
+            max-width: 100%;
+            max-height: 100%;
+            object-fit: contain;
+            image-rendering: -webkit-optimize-contrast;
+            image-rendering: high-quality;
+            filter: drop-shadow(0 4px 14px rgba(0, 0, 0, 0.45));
+            border-radius: 6px;
+        }
+        .dz-prev-rm {
+            position: absolute;
+            top: 0.6rem;
+            right: 0.6rem;
+            z-index: 10;
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: rgba(0, 0, 0, 0.75);
+            color: #fff;
+            font-size: 0.85rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.18s ease, transform 0.18s ease;
+        }
+        .dz-prev-rm:hover {
+            background: rgba(220, 38, 38, 0.95);
+            transform: scale(1.1);
+        }
+        /* Preview Overlay Tools (Mark & Zoom, Retake) */
+        .dz-tools-overlay {
+            position: absolute;
+            bottom: 0.75rem;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: 0.5rem;
+            z-index: 10;
+        }
+        .dz-tool-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.45rem 0.9rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(15, 23, 42, 0.88);
+            border: 1px solid rgba(255, 255, 255, 0.28);
+            backdrop-filter: blur(8px);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            transition: all 0.18s ease;
+        }
+        .dz-tool-pill:hover {
+            background: var(--eye);
+            border-color: rgba(255, 255, 255, 0.6);
+            transform: translateY(-2px);
+        }
+        .nail-panel .dz-tool-pill:hover {
+            background: var(--nail);
+        }
+        .dz-tool-pill svg {
+            width: 14px;
+            height: 14px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .roi-indicator-badge {
+            position: absolute;
+            top: 0.65rem;
+            left: 0.65rem;
+            z-index: 10;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            background: rgba(5, 150, 105, 0.95);
+            color: #fff;
+            backdrop-filter: blur(6px);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+        }
+
+        /* Submit Button */
+        .sub-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: calc(100% - 3rem);
+            margin: 0 1.5rem 1.5rem;
+            padding: 0.85rem 1.5rem;
+            border-radius: var(--rad);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, var(--eye), var(--eye2));
+            box-shadow: 0 4px 14px rgba(8, 145, 178, 0.35);
+            transition: opacity 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+        }
+        .sub-btn:disabled {
+            background: var(--g300);
+            color: var(--g500);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .sub-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(8, 145, 178, 0.45);
+        }
+        .nail-panel .sub-btn:not(:disabled) {
+            background: linear-gradient(135deg, var(--nail), var(--nail2));
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35);
+        }
+        .nail-panel .sub-btn:not(:disabled):hover {
+            box-shadow: 0 6px 20px rgba(124, 58, 237, 0.45);
+        }
+
+        .spin {
+            width: 17px;
+            height: 17px;
+            border: 2.5px solid rgba(255, 255, 255, 0.35);
+            border-top-color: #fff;
+            border-radius: 50%;
+            animation: sp 0.7s linear infinite;
+        }
+        @keyframes sp {
+            to { transform: rotate(360deg); }
+        }
+
+        /* ── RESULT COLUMN & CARDS ────────────────────────────── */
+        .res-ph {
+            background: #fff;
+            border: 2px dashed var(--g200);
+            border-radius: var(--radxl);
+            min-height: 420px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            gap: 0.75rem;
+            padding: 2.5rem 1.5rem;
+        }
+        .res-ph-ico {
+            width: 58px;
+            height: 58px;
+            color: var(--g300);
+        }
+        .res-ph h4 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--g600);
+        }
+        .res-ph p {
+            font-size: 0.85rem;
+            color: var(--g400);
+            max-width: 250px;
+        }
+
+        .res-card {
+            background: #fff;
+            border-radius: var(--radxl);
+            border: 1px solid var(--g200);
+            box-shadow: var(--sh);
+            overflow: hidden;
+        }
+        .res-body {
+            padding: 1.6rem 1.6rem 1.25rem;
+        }
+        .res-model-lbl {
+            font-size: 0.72rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--eye2);
+            margin-bottom: 0.85rem;
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+        }
+        .res-model-lbl::before {
+            content: '';
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: var(--ok);
+        }
+        .hb-row {
+            display: flex;
+            align-items: flex-end;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .hb-val {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 3.25rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--g900);
+            letter-spacing: -0.03em;
+        }
+        .hb-unit {
+            font-size: 1.05rem;
+            font-weight: 600;
+            color: var(--g500);
+            padding-bottom: 0.4rem;
+        }
+        .sev-row {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.2rem;
+        }
+        .sev-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            padding: 0.35rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.76rem;
+            font-weight: 800;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }
+        .sev-NORMAL          { background: #dcfce7; color: #15803d; }
+        .sev-MILD_ANEMIA     { background: #fef3c7; color: #92400e; }
+        .sev-MODERATE_ANEMIA { background: #ffedd5; color: #9a3412; }
+        .sev-SEVERE_ANEMIA   { background: #fee2e2; color: #991b1b; }
+
+        .prob-wrap {
+            margin-bottom: 1.2rem;
+        }
+        .prob-lbl {
+            font-size: 0.78rem;
+            font-weight: 600;
+            color: var(--g600);
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 0.35rem;
+        }
+        .prob-bar {
+            height: 9px;
+            border-radius: 999px;
+            background: var(--g200);
+            overflow: hidden;
+        }
+        .prob-fill {
+            height: 100%;
+            border-radius: 999px;
+            background: linear-gradient(90deg, var(--ok), var(--warn), var(--err));
+            transition: width 0.8s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .clin-box {
+            padding: 0.85rem 1rem;
+            border-radius: var(--rad);
+            font-size: 0.84rem;
+            line-height: 1.55;
+            color: var(--g700);
+            background: var(--g50);
+            border-left: 4px solid var(--g300);
+            margin-bottom: 0.5rem;
+        }
+        .cb-NORMAL          { border-color: var(--ok);  background: #f0fdf4; }
+        .cb-MILD_ANEMIA     { border-color: var(--warn); background: #fffbeb; }
+        .cb-MODERATE_ANEMIA { border-color: var(--orange); background: #fff7ed; }
+        .cb-SEVERE_ANEMIA   { border-color: var(--err); background: #fef2f2; }
+
+        .model-note-box {
+            padding: 0.65rem 0.95rem;
+            border-radius: var(--rad);
+            font-size: 0.76rem;
+            color: var(--g600);
+            background: var(--g50);
+            border: 1px solid var(--g200);
+            margin-top: 0.85rem;
+            font-style: italic;
+        }
+
+        /* Grad-CAM */
+        .gcam-wrap {
+            padding: 0 1.6rem 1rem;
+        }
+        .gcam-lbl {
+            font-size: 0.72rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--g500);
+            margin-bottom: 0.45rem;
+        }
+        .gcam-img {
+            width: 100%;
+            border-radius: var(--rad);
+            object-fit: contain;
+            max-height: 210px;
+            background: #0f172a;
+        }
+
+        /* QA Warnings */
+        .qa-wrap {
+            padding: 0 1.6rem 0.85rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.4rem;
+        }
+        .qa-w {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.55rem;
+            padding: 0.55rem 0.85rem;
+            border-radius: var(--rad);
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            font-size: 0.78rem;
+            color: #92400e;
+        }
+        .qa-w svg {
+            width: 15px;
+            height: 15px;
+            color: #d97706;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+            margin-top: 1px;
+        }
+
+        /* Nutrition & Telemetry Accordions */
+        .nut-wrap {
+            border-top: 1px solid var(--g100);
+        }
+        .nut-tog {
+            width: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1rem 1.6rem;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--g700);
+            transition: background 0.15s ease;
+        }
+        .nut-tog:hover {
+            background: var(--g50);
+        }
+        .nut-tog svg {
+            width: 16px;
+            height: 16px;
+            stroke: var(--g400);
+            fill: none;
+            stroke-width: 2;
+            transition: transform 0.2s ease;
+        }
+        .nut-tog.open svg {
+            transform: rotate(180deg);
+        }
+        .nut-body {
+            display: none;
+            padding: 0 1.6rem 1.35rem;
+        }
+        .nut-body.on {
+            display: block;
+        }
+        .nut-theme {
+            font-size: 0.74rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--ok);
+            margin-bottom: 0.85rem;
+        }
+        .food-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+            gap: 0.65rem;
+            margin-bottom: 1rem;
+        }
+        .food-item {
+            padding: 0.75rem 0.95rem;
+            border-radius: var(--rad);
+            background: var(--g50);
+            border: 1px solid var(--g200);
+        }
+        .food-name {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--g800);
+        }
+        .food-det {
+            font-size: 0.76rem;
+            color: var(--g500);
+            margin-top: 0.15rem;
+            line-height: 1.4;
+        }
+        .meals {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(170px, 1fr));
+            gap: 0.65rem;
+            margin-bottom: 1rem;
+        }
+        .meal {
+            padding: 0.6rem 0.95rem;
+            background: var(--g50);
+            border-radius: var(--rad);
+            border: 1px solid var(--g200);
+        }
+        .meal-l {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+            color: var(--g500);
+        }
+        .meal-d {
+            font-size: 0.77rem;
+            color: var(--g700);
+            line-height: 1.45;
+        }
+        .med-list {
+            list-style: none;
+        }
+        .med-list li {
+            font-size: 0.77rem;
+            color: var(--g600);
+            line-height: 1.5;
+            padding: 0.25rem 0 0.25rem 1.1rem;
+            position: relative;
+        }
+        .med-list li::before {
+            content: '•';
+            position: absolute;
+            left: 0;
+            color: var(--err);
+            font-weight: bold;
+        }
+
+        /* Disclaimer */
+        .discl {
+            padding: 0.85rem 1.6rem 1.15rem;
+            font-size: 0.72rem;
+            color: var(--g500);
+            border-top: 1px solid var(--g100);
+            line-height: 1.55;
+            background: var(--g50);
+        }
+
+        /* Error Box */
+        .err-box {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.85rem;
+            padding: 1.6rem;
+        }
+        .err-box svg {
+            width: 24px;
+            height: 24px;
+            color: var(--err);
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .err-box h4 {
+            font-size: 0.98rem;
+            font-weight: 700;
+            color: var(--err);
+            margin-bottom: 0.25rem;
+        }
+        .err-box p {
+            font-size: 0.84rem;
+            color: var(--g600);
+            line-height: 1.5;
+        }
+
+        /* ── COMBINED TAB ─────────────────────────────────────── */
+        .comb-info {
+            display: flex;
+            align-items: flex-start;
+            gap: 0.75rem;
+            padding: 0.95rem 1.25rem;
+            background: #eff6ff;
+            border: 1px solid #bfdbfe;
+            border-radius: var(--radl);
+            font-size: 0.88rem;
+            color: #1e40af;
+            margin-bottom: 1.25rem;
+        }
+        .comb-info svg {
+            width: 18px;
+            height: 18px;
+            stroke: #3b82f6;
+            fill: none;
+            stroke-width: 1.8;
+            margin-top: 2px;
+        }
+        .comb-uploads {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+            margin-bottom: 1.25rem;
+        }
+        .cu-card {
+            background: #fff;
+            border-radius: var(--radl);
+            border: 1px solid var(--g200);
+            box-shadow: var(--sh-sm);
+            overflow: hidden;
+        }
+        .cu-hdr {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.95rem 1.15rem;
+            border-bottom: 1px solid var(--g100);
+        }
+        .cu-ico {
+            width: 34px;
+            height: 34px;
+            min-width: 34px;
+            min-height: 34px;
+            border-radius: 9px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .cu-ico svg {
+            width: 16px;
+            height: 16px;
+            stroke: white;
+            fill: none;
+            stroke-width: 1.8;
+        }
+        .cu-ico.eye  { background: linear-gradient(135deg, var(--eye), var(--eye2)); }
+        .cu-ico.nail { background: linear-gradient(135deg, var(--nail), var(--nail2)); }
+        .cu-hdr h4 {
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: var(--g900);
+        }
+        .cu-hdr p {
+            font-size: 0.72rem;
+            color: var(--g500);
+        }
+        .dz.mini {
+            min-height: 120px;
+            margin: 0.85rem 0.85rem 0.4rem;
+        }
+        .cu-card .dz-btn-row {
+            padding: 0 0.85rem 0.85rem;
+        }
+        .comb-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.6rem;
+            width: 100%;
+            padding: 0.85rem;
+            border-radius: var(--rad);
+            font-size: 0.95rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, var(--comb), var(--comb2));
+            box-shadow: 0 4px 14px rgba(5, 150, 105, 0.35);
+            margin-bottom: 1.75rem;
+            transition: opacity 0.18s ease, transform 0.18s ease;
+        }
+        .comb-btn:disabled {
+            background: var(--g300);
+            color: var(--g500);
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .comb-btn:not(:disabled):hover {
+            transform: translateY(-1px);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.45);
+        }
+        .comb-results {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.25rem;
+        }
+        .cr-lbl {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            padding: 0.55rem 0.85rem;
+            border-radius: var(--rad);
+            margin-bottom: 0.65rem;
+        }
+        .cr-lbl svg {
+            width: 16px;
+            height: 16px;
+            fill: none;
+            stroke: currentColor;
+            stroke-width: 2;
+        }
+        .cr-lbl.eye  { background: var(--eye-bg);  color: var(--eye2); }
+        .cr-lbl.nail { background: var(--nail-bg); color: var(--nail2); }
+
+        /* ── ABOUT SECTION ────────────────────────────────────── */
+        #about {
+            background: #f8fafc;
+        }
+        .about-wrap {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 4rem 1.5rem;
+        }
+        .about-wrap .scr-title-row {
+            margin-bottom: 2.5rem;
+        }
+        .model-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.75rem;
+            margin-bottom: 2.5rem;
+        }
+        .m-card {
+            border-radius: var(--radxl);
+            overflow: hidden;
+            box-shadow: var(--sh);
+            background: #fff;
+            border: 1px solid var(--g200);
+        }
+        .m-hdr {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            padding: 1.5rem;
+        }
+        .m-hdr svg {
+            width: 32px;
+            height: 32px;
+            stroke: white;
+            fill: none;
+            stroke-width: 1.8;
+        }
+        .m-hdr h3 {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: #fff;
+        }
+        .m-hdr span {
+            display: inline-block;
+            font-size: 0.68rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            padding: 0.2rem 0.55rem;
+            border-radius: 999px;
+            background: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            margin-top: 0.25rem;
+            text-transform: uppercase;
+        }
+        .m-hdr.eye  { background: linear-gradient(135deg, var(--eye), var(--eye2)); }
+        .m-hdr.nail { background: linear-gradient(135deg, var(--nail), var(--nail2)); }
+        .m-body {
+            padding: 1.5rem;
+        }
+        .m-specs {
+            display: grid;
+            grid-template-columns: 1fr 1.35fr;
+            gap: 0.35rem 0.85rem;
+            margin-bottom: 1.1rem;
+        }
+        .m-specs dt {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--g500);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            padding: 0.3rem 0;
+            border-bottom: 1px solid var(--g100);
+        }
+        .m-specs dd {
+            font-size: 0.82rem;
+            color: var(--g800);
+            padding: 0.3rem 0;
+            border-bottom: 1px solid var(--g100);
+        }
+        .m-note {
+            font-size: 0.8rem;
+            color: var(--g600);
+            line-height: 1.6;
+        }
+
+        .warn-box {
+            background: #fffbeb;
+            border: 1px solid #fde68a;
+            border-radius: var(--radxl);
+            padding: 2rem;
+            box-shadow: var(--sh-sm);
+        }
+        .warn-hdr {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            margin-bottom: 1.15rem;
+        }
+        .warn-hdr svg {
+            width: 22px;
+            height: 22px;
+            color: #d97706;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .warn-hdr h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: #92400e;
+        }
+        .warn-list {
+            display: flex;
+            flex-direction: column;
+            gap: 0.6rem;
+        }
+        .warn-list li {
+            font-size: 0.85rem;
+            color: #78350f;
+            line-height: 1.55;
+            padding-left: 1.25rem;
+            position: relative;
+        }
+        .warn-list li::before {
+            content: '⚠';
+            position: absolute;
+            left: 0;
+            font-size: 0.78rem;
+        }
+
+        /* ── MODALS (CAMERA & MARK/ZOOM ROI CROPPER) ──────────── */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(15, 23, 42, 0.82);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            z-index: 1000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 1.25rem;
+        }
+        .modal-overlay.hidden {
+            display: none !important;
+        }
+        .modal-box {
+            background: #fff;
+            border-radius: var(--radxl);
+            box-shadow: var(--shl);
+            width: 100%;
+            max-width: 660px;
+            max-height: 92vh;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            animation: popIn 0.22s cubic-bezier(0.16, 1, 0.3, 1);
+            border: 1px solid var(--g200);
+        }
+        @keyframes popIn {
+            from { opacity: 0; transform: scale(0.96) translateY(8px); }
+            to   { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        .modal-hdr {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 1.1rem 1.4rem;
+            border-bottom: 1px solid var(--g200);
+            background: #fff;
+        }
+        .modal-hdr-ttl {
+            display: flex;
+            flex-direction: column;
+            gap: 0.2rem;
+        }
+        .modal-hdr-ttl h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--g900);
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .modal-hdr-ttl p {
+            font-size: 0.78rem;
+            color: var(--g500);
+        }
+        .modal-close-btn {
+            width: 32px;
+            height: 32px;
+            border-radius: 50%;
+            background: var(--g100);
+            color: var(--g600);
+            font-size: 1rem;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.15s ease, color 0.15s ease;
+        }
+        .modal-close-btn:hover {
+            background: var(--err);
+            color: #fff;
+        }
+        .modal-body {
+            padding: 1.25rem 1.4rem;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .modal-ftr {
+            padding: 1rem 1.4rem;
+            border-top: 1px solid var(--g200);
+            background: var(--g50);
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 0.75rem;
+        }
+
+        /* ── CAMERA VIEWFINDER ────────────────────────────────── */
+        .cam-viewfinder {
+            position: relative;
+            background: #000;
+            border-radius: var(--radl);
+            overflow: hidden;
+            width: 100%;
+            aspect-ratio: 4 / 3;
+            max-height: 420px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        #cam-video {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+        #cam-frozen-img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: none;
+        }
+        .cam-reticle {
+            position: absolute;
+            inset: 15%;
+            border: 2px dashed rgba(255, 255, 255, 0.8);
+            border-radius: var(--radxl);
+            pointer-events: none;
+            box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.4);
+            display: flex;
+            align-items: flex-end;
+            justify-content: center;
+            padding-bottom: 0.65rem;
+        }
+        .cam-reticle-txt {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #fff;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 0.2rem 0.75rem;
+            border-radius: 999px;
+            letter-spacing: 0.03em;
+        }
+        .cam-live-indicator {
+            position: absolute;
+            top: 0.85rem;
+            left: 0.85rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.4rem;
+            background: rgba(0, 0, 0, 0.65);
+            padding: 0.25rem 0.6rem;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 800;
+            color: #fff;
+            letter-spacing: 0.08em;
+        }
+        .cam-live-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ef4444;
+            animation: pulseRed 1.5s infinite;
+        }
+        @keyframes pulseRed {
+            0%, 100% { opacity: 1; }
+            50%      { opacity: 0.3; }
+        }
+        .cam-controls {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1.5rem;
+            padding: 0.35rem 0;
+        }
+        .cam-shutter-btn {
+            width: 68px;
+            height: 68px;
+            border-radius: 50%;
+            background: #fff;
+            border: 4px solid var(--eye);
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.4);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .cam-shutter-btn:hover {
+            transform: scale(1.06);
+            box-shadow: 0 6px 22px rgba(8, 145, 178, 0.55);
+        }
+        .cam-shutter-inner {
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--eye), var(--eye2));
+        }
+        .cam-flip-btn {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            background: var(--g100);
+            color: var(--g700);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.15s ease;
+        }
+        .cam-flip-btn:hover {
+            background: var(--g200);
+            transform: rotate(180deg);
+        }
+        .cam-flip-btn svg {
+            width: 20px;
+            height: 20px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+
+        /* ── MARK & ZOOM CROP WORKSPACE ───────────────────────── */
+        .crop-workspace {
+            position: relative;
+            background: #0f172a;
+            border-radius: var(--radl);
+            overflow: hidden;
+            width: 100%;
+            height: 380px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: none;
+        }
+        #crop-canvas {
+            cursor: grab;
+            display: block;
+        }
+        #crop-canvas:active {
+            cursor: grabbing;
+        }
+        .crop-toolbar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            background: var(--g100);
+            padding: 0.65rem 1rem;
+            border-radius: var(--rad);
+            flex-wrap: wrap;
+        }
+        .crop-zoom-grp {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            min-width: 200px;
+        }
+        .crop-btn-sm {
+            width: 32px;
+            height: 32px;
+            border-radius: var(--rad);
+            background: #fff;
+            border: 1px solid var(--g300);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.95rem;
+            font-weight: bold;
+            color: var(--g700);
+            transition: all 0.15s ease;
+        }
+        .crop-btn-sm:hover {
+            background: var(--g200);
+            color: var(--g900);
+        }
+        .crop-slider {
+            flex: 1;
+            accent-color: var(--eye);
+            cursor: pointer;
+        }
+        .crop-zoom-val {
+            font-size: 0.82rem;
+            font-weight: 700;
+            color: var(--g700);
+            min-width: 40px;
+            text-align: right;
+        }
+        .crop-preview-mini {
+            position: absolute;
+            bottom: 0.75rem;
+            right: 0.75rem;
+            width: 96px;
+            height: 96px;
+            border-radius: var(--rad);
+            border: 2px solid #fff;
+            box-shadow: 0 4px 14px rgba(0,0,0,0.5);
+            overflow: hidden;
+            background: #000;
+            pointer-events: none;
+            z-index: 15;
+        }
+        #crop-mini-canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+        .crop-preview-lbl {
+            position: absolute;
+            top: 3px;
+            left: 4px;
+            font-size: 0.58rem;
+            font-weight: 800;
+            color: #fff;
+            background: rgba(0,0,0,0.65);
+            padding: 1px 4px;
+            border-radius: 4px;
+            text-transform: uppercase;
+        }
+
+        /* ── MODAL BUTTONS ────────────────────────────────────── */
+        .btn-modal-sec {
+            padding: 0.55rem 1.15rem;
+            border-radius: var(--rad);
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--g700);
+            background: #fff;
+            border: 1px solid var(--g300);
+            transition: all 0.15s ease;
+        }
+        .btn-modal-sec:hover {
+            background: var(--g100);
+            color: var(--g900);
+        }
+        .btn-modal-prim {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0.55rem 1.35rem;
+            border-radius: var(--rad);
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, var(--eye), var(--eye2));
+            box-shadow: 0 2px 10px rgba(8, 145, 178, 0.35);
+            transition: all 0.15s ease;
+        }
+        .btn-modal-prim:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.5);
+        }
+        .btn-modal-prim.nail {
+            background: linear-gradient(135deg, var(--nail), var(--nail2));
+            box-shadow: 0 2px 10px rgba(124, 58, 237, 0.35);
+        }
+
+        /* ── TOASTS ───────────────────────────────────────────── */
+        #toasts {
+            position: fixed;
+            bottom: 1.5rem;
+            right: 1.5rem;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            max-width: 380px;
+        }
+        .toast {
+            padding: 0.85rem 1.25rem;
+            border-radius: var(--radl);
+            font-size: 0.88rem;
+            box-shadow: var(--shl);
+            animation: tin 0.28s ease-out;
+            line-height: 1.45;
+        }
+        @keyframes tin {
+            from { opacity: 0; transform: translateY(10px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .toast.err  { background: #991b1b; color: #fff; }
+        .toast.ok   { background: #064e3b; color: #fff; }
+        .toast.info { background: #0f172a; color: #fff; }
+
+        /* ── FOOTER REMOVED (GLOBAL NO-FOOTER RULE ACROSS ALL PAGES) ── */
+        footer, .site-footer, .footer, .page-footer, .ft-inner {
+            display: none !important;
+            height: 0 !important;
+            padding: 0 !important;
+            margin: 0 !important;
+            border: none !important;
+            visibility: hidden !important;
+        }
+
+        /* ── UTILS & RESPONSIVE ───────────────────────────────── */
+        .hidden {
+            display: none !important;
+        }
+
+        @media (max-width: 1024px) {
+            .hero-wrap {
+                grid-template-columns: 1fr;
+                gap: 2.5rem;
+                padding: 4rem 1.5rem 3.5rem;
+            }
+            .hero-cards {
+                flex-direction: row;
+                flex-wrap: wrap;
+            }
+            .feat-card {
+                flex: 1 1 220px;
+            }
+            .two-col {
+                grid-template-columns: 1fr;
+            }
+            .model-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+        @media (max-width: 768px) {
+            .comb-uploads, .comb-results {
+                grid-template-columns: 1fr;
+            }
+            .meals {
+                grid-template-columns: 1fr;
+            }
+            .tab .tab-arch {
+                display: none;
+            }
+        }
+        @media (max-width: 500px) {
+            .hero-wrap {
+                padding: 3rem 1rem 2.5rem;
+            }
+            .tabs {
+                flex-direction: column;
+            }
+            .hero-ctas {
+                flex-direction: column;
+            }
+        }
+        /* ── REPORT & DATABASE UI ADDITIONS ─────────────────── */
+        .res-top-bar {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 0.75rem;
+            padding: 1rem 1.6rem;
+            background: #f8fafc;
+            border-bottom: 1px solid var(--g200);
+            flex-wrap: wrap;
+        }
+        .res-rep-meta {
+            display: flex;
+            align-items: center;
+            gap: 0.65rem;
+            font-size: 0.8rem;
+            color: var(--g600);
+            flex-wrap: wrap;
+        }
+        .rep-id-badge {
+            font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+            font-weight: 700;
+            padding: 0.2rem 0.6rem;
+            border-radius: 6px;
+            background: #e2e8f0;
+            color: #1e293b;
+            letter-spacing: 0.04em;
+            font-size: 0.78rem;
+        }
+        .mongo-pill {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            color: #065f46;
+            background: #d1fae5;
+            border: 1px solid #a7f3d0;
+        }
+        .mongo-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #10b981;
+            box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.25);
+        }
+        .res-actions-row {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+        }
+        .btn-dl-report {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1.1rem;
+            border-radius: var(--rad);
+            font-size: 0.84rem;
+            font-weight: 700;
+            color: #fff;
+            background: linear-gradient(135deg, #0f172a, #1e293b);
+            box-shadow: 0 3px 10px rgba(15, 23, 42, 0.25);
+            transition: all 0.16s ease;
+            cursor: pointer;
+        }
+        .btn-dl-report:hover {
+            background: linear-gradient(135deg, var(--eye), var(--eye2));
+            box-shadow: 0 4px 16px rgba(8, 145, 178, 0.4);
+            transform: translateY(-1px);
+        }
+        .btn-dl-report svg {
+            width: 15px;
+            height: 15px;
+            stroke: currentColor;
+            fill: none;
+            stroke-width: 2;
+        }
+        .sample-chips {
+            display: flex;
+            align-items: center;
+            gap: 0.45rem;
+            padding: 0 1.5rem 0.85rem;
+            flex-wrap: wrap;
+        }
+        .sample-chip-lbl {
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: var(--g400);
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .sample-chip-btn {
+            font-size: 0.74rem;
+            font-weight: 600;
+            color: var(--g700);
+            background: var(--g100);
+            border: 1px solid var(--g200);
+            padding: 0.25rem 0.65rem;
+            border-radius: 999px;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+        .sample-chip-btn:hover {
+            background: var(--eye-bg);
+            border-color: #a5f3fc;
+            color: var(--eye2);
+        }
+
+        /* Nav additions */
+        .hdr-right {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+        .db-status-pill, #db-nav-pill, .mongo-pill {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+            pointer-events: none !important;
+        }
+        .nav-badge {
+            display: inline-block;
+            padding: 0.12rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.68rem;
+            font-weight: 800;
+            background: var(--eye);
+            color: #fff;
+            margin-left: 0.25rem;
+        }
+
+        /* ── HISTORY SECTION ─────────────────────────────────── */
+        #history {
+            background: #f8fafc;
+        }
+        .hist-wrap {
+            max-width: var(--maxw);
+            margin: 0 auto;
+            padding: 3rem 1.5rem 5rem;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1.25rem;
+            margin-bottom: 2rem;
+        }
+        .stat-card {
+            background: #fff;
+            border-radius: var(--radxl);
+            border: 1px solid var(--g200);
+            padding: 1.35rem 1.5rem;
+            box-shadow: var(--sh-sm);
+            display: flex;
+            flex-direction: column;
+            gap: 0.35rem;
+        }
+        .stat-lbl {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: var(--g500);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+        }
+        .stat-val {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 2.2rem;
+            font-weight: 700;
+            line-height: 1.1;
+            color: var(--g900);
+        }
+        .stat-sub {
+            font-size: 0.76rem;
+            color: var(--g500);
+        }
+        .hist-toolbar {
+            background: #fff;
+            border: 1px solid var(--g200);
+            border-radius: var(--radl);
+            padding: 1rem 1.25rem;
+            margin-bottom: 1.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1rem;
+            flex-wrap: wrap;
+            box-shadow: var(--sh-sm);
+        }
+        .hist-filters {
+            display: flex;
+            gap: 0.4rem;
+            flex-wrap: wrap;
+        }
+        .hist-filter-btn {
+            padding: 0.4rem 0.85rem;
+            border-radius: 999px;
+            font-size: 0.78rem;
+            font-weight: 700;
+            color: var(--g600);
+            background: var(--g100);
+            border: 1px solid var(--g200);
+            transition: all 0.16s ease;
+        }
+        .hist-filter-btn:hover {
+            background: var(--g200);
+            color: var(--g900);
+        }
+        .hist-filter-btn.active {
+            background: #0f172a;
+            color: #fff;
+            border-color: #0f172a;
+        }
+        .hist-search-box {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            flex: 1;
+            max-width: 320px;
+            background: var(--g50);
+            border: 1.5px solid var(--g200);
+            border-radius: var(--rad);
+            padding: 0.45rem 0.75rem;
+        }
+        .hist-search-box input {
+            border: none;
+            background: transparent;
+            outline: none;
+            width: 100%;
+            font-size: 0.86rem;
+            color: var(--g800);
+        }
+        .hist-list {
+            display: flex;
+            flex-direction: column;
+            gap: 1rem;
+        }
+        .hist-item-card {
+            background: #fff;
+            border-radius: var(--radl);
+            border: 1px solid var(--g200);
+            padding: 1.25rem 1.5rem;
+            box-shadow: var(--sh-sm);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 1.25rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+            flex-wrap: wrap;
+        }
+        .hist-item-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--sh);
+        }
+        .hist-item-left {
+            display: flex;
+            align-items: center;
+            gap: 1.1rem;
+        }
+        .hist-thumb {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            object-fit: cover;
+            background: #0f172a;
+            border: 1.5px solid var(--g200);
+            flex-shrink: 0;
+        }
+        .hist-item-info {
+            display: flex;
+            flex-direction: column;
+            gap: 0.25rem;
+        }
+        .hist-item-id-row {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+        }
+        .hist-mode-pill {
+            font-size: 0.68rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            padding: 0.18rem 0.55rem;
+            border-radius: 999px;
+            letter-spacing: 0.05em;
+        }
+        .hist-mode-pill.eye { background: var(--eye-bg); color: var(--eye2); }
+        .hist-mode-pill.nail { background: var(--nail-bg); color: var(--nail2); }
+        .hist-mode-pill.combined { background: #ecfdf5; color: #047857; }
+        .hist-item-dt {
+            font-size: 0.78rem;
+            color: var(--g500);
+        }
+        .hist-item-pt {
+            font-size: 0.8rem;
+            color: var(--g600);
+        }
+        .hist-item-center {
+            display: flex;
+            align-items: center;
+            gap: 1.25rem;
+        }
+        .hist-hb-box {
+            text-align: right;
+        }
+        .hist-hb-val {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 1.75rem;
+            font-weight: 700;
+            line-height: 1;
+            color: var(--g900);
+        }
+        .hist-hb-unit {
+            font-size: 0.75rem;
+            color: var(--g500);
+            font-weight: 600;
+        }
+        .hist-actions {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .btn-hist-act {
+            padding: 0.45rem 0.85rem;
+            border-radius: var(--rad);
+            font-size: 0.8rem;
+            font-weight: 700;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            transition: all 0.15s ease;
+            cursor: pointer;
+        }
+        .btn-hist-view {
+            background: var(--g100);
+            color: var(--g800);
+            border: 1px solid var(--g200);
+        }
+        .btn-hist-view:hover {
+            background: #fff;
+            border-color: var(--eye);
+            color: var(--eye2);
+        }
+        .btn-hist-dl {
+            background: #0f172a;
+            color: #fff;
+        }
+        .btn-hist-dl:hover {
+            background: var(--eye);
+        }
+        .btn-hist-del {
+            background: transparent;
+            color: var(--g400);
+            padding: 0.45rem 0.55rem;
+        }
+        .btn-hist-del:hover {
+            color: var(--err);
+            background: #fee2e2;
+        }
+
+        /* ── CLINICAL REPORT MODAL ────────────────────────────── */
+        .report-box {
+            max-width: 820px;
+            background: #fff;
+        }
+        .rep-doc {
+            padding: 2.2rem 2.4rem;
+            font-family: 'Inter', system-ui, sans-serif;
+            color: #0f172a;
+            background: #fff;
+        }
+        .rep-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            border-bottom: 2px solid #0f172a;
+            padding-bottom: 1.25rem;
+            margin-bottom: 1.5rem;
+        }
+        .rep-logo-grp {
+            display: flex;
+            align-items: center;
+            gap: 0.85rem;
+        }
+        .rep-logo-ico {
+            width: 44px;
+            height: 44px;
+            background: #0891b2;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+        }
+        .rep-title-h1 {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 1.45rem;
+            font-weight: 700;
+            color: #0f172a;
+            line-height: 1.15;
+        }
+        .rep-subtitle {
+            font-size: 0.74rem;
+            font-weight: 700;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+        .rep-meta-right {
+            text-align: right;
+            font-size: 0.78rem;
+            color: #475569;
+            line-height: 1.5;
+        }
+        .rep-meta-right strong {
+            color: #0f172a;
+            font-family: monospace;
+            font-size: 0.86rem;
+        }
+        .rep-section-ttl {
+            font-size: 0.82rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: #0891b2;
+            margin: 1.4rem 0 0.6rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            padding-bottom: 0.35rem;
+        }
+        .rep-grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+        .rep-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.82rem;
+        }
+        .rep-table td {
+            padding: 0.45rem 0.6rem;
+            border-bottom: 1px solid #f1f5f9;
+        }
+        .rep-table td:first-child {
+            color: #64748b;
+            font-weight: 600;
+            width: 45%;
+        }
+        .rep-table td:last-child {
+            color: #0f172a;
+            font-weight: 700;
+        }
+        .rep-score-highlight {
+            background: #f8fafc;
+            border: 1.5px solid #e2e8f0;
+            border-radius: var(--rad);
+            padding: 1.1rem 1.4rem;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin: 1rem 0;
+        }
+        .rep-score-hb {
+            font-family: 'Fraunces', Georgia, serif;
+            font-size: 2.8rem;
+            font-weight: 700;
+            line-height: 1;
+            color: #0f172a;
+        }
+        .rep-images-row {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+            gap: 1rem;
+            margin: 0.75rem 0 1.25rem;
+        }
+        .rep-img-card {
+            border: 1px solid #e2e8f0;
+            border-radius: var(--rad);
+            overflow: hidden;
+            background: #0f172a;
+            text-align: center;
+        }
+        .rep-img-card img {
+            width: 100%;
+            height: 140px;
+            object-fit: contain;
+            background: #000;
+        }
+        .rep-img-caption {
+            padding: 0.35rem 0.6rem;
+            font-size: 0.7rem;
+            font-weight: 700;
+            color: #475569;
+            background: #f8fafc;
+            border-top: 1px solid #e2e8f0;
+        }
+        .rep-disclaimer-box {
+            background: #fef2f2;
+            border: 1px solid #fecaca;
+            border-radius: var(--rad);
+            padding: 0.85rem 1rem;
+            font-size: 0.72rem;
+            color: #991b1b;
+            line-height: 1.5;
+            margin-top: 1.5rem;
+        }
+        .rep-sign-strip {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 2rem;
+            padding-top: 1.5rem;
+            border-top: 1px solid #cbd5e1;
+            font-size: 0.74rem;
+            color: #64748b;
+        }
+
+        /* ── PRINT MEDIA RULES ────────────────────────────────── */
+        @media print {
+            body {
+                background: #fff !important;
+                color: #000 !important;
+            }
+            .hdr, footer, #toasts, .modal-overlay:not(#modal-report), .modal-hdr, .modal-ftr, #home, #screening, #history, #about {
+                display: none !important;
+            }
+            #modal-report {
+                display: block !important;
+                position: static !important;
+                background: transparent !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                box-shadow: none !important;
+                backdrop-filter: none !important;
+            }
+            #modal-report .modal-box {
+                box-shadow: none !important;
+                border: none !important;
+                max-width: 100% !important;
+                max-height: none !important;
+                width: 100% !important;
+                overflow: visible !important;
+            }
+            .rep-doc {
+                padding: 0 !important;
+            }
+            @page {
+                margin: 1.5cm;
+                size: A4 portrait;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header class="hdr" role="banner">
+    <div class="hdr-inner">
+        <a href="#" class="brand" id="nav-brand">
+            <div class="brand-ico">
+                <svg width="20" height="20" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3" fill="white" stroke="none"/></svg>
+            </div>
+            <div>
+                <span class="brand-name">AnemiaSense</span>
+                <span class="brand-sub">AI Anemia Screening</span>
+            </div>
+        </a>
+        <nav class="nav" role="navigation" aria-label="Main Navigation">
+            <a href="#" class="active" id="nl-home" data-sec="home">Home</a>
+            <a href="#" id="nl-screening" data-sec="screening">Screening</a>
+            <a href="#" id="nl-history" data-sec="history">History <span class="nav-badge" id="nav-hist-count">0</span></a>
+            <a href="#" id="nl-about" data-sec="about">About</a>
+        </nav>
+    </div>
+</header>
+
+<main class="pg" role="main">
+
+<!-- HOME -->
+<section id="home" class="sec on" aria-label="Home">
+    <div class="hero-wrap">
+        <!-- Left: Headline & CTAs -->
+        <div>
+            <div class="hero-badge">
+                <span class="beacon"></span>
+                <span class="badge-txt">Dual-Model Non-Invasive AI Screening</span>
+            </div>
+            <h1 class="hero-h1">
+                AnemiaSense —<br>
+                <span>AI-Based Anemia&nbsp;Screening</span>
+            </h1>
+            <p class="hero-lead">
+                Screen hemoglobin levels non-invasively using photos of your eye conjunctiva
+                or fingernail bed. Two independent AI models with research-validated pipelines. Instant, private, and calculated in real time.
+            </p>
+            <div class="hero-ctas">
+                <button class="btn-prim" id="btn-start" type="button">
+                    Start Screening
+                    <svg width="16" height="16" viewBox="0 0 20 20" stroke="currentColor" stroke-width="2.2" fill="none"><path d="M4 10h12M12 5l5 5-5 5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                </button>
+                <a href="#" class="btn-ghost" id="btn-learn" data-sec="about">How It Works</a>
+            </div>
+            <div class="hero-note">
+                <span class="hero-note-ico">ℹ</span>
+                <p><strong>Research Screening Tool:</strong> Results are experimental estimates. Any abnormal or symptomatic result must be confirmed with a certified laboratory blood test (CBC).</p>
+            </div>
+        </div>
+        <!-- Right: Feature Cards -->
+        <div class="hero-cards">
+            <div class="feat-card">
+                <div class="feat-card-top">
+                    <div class="feat-ico eye">
+                        <svg width="20" height="20" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                    </div>
+                    <h3>Eye Analysis</h3>
+                    <span class="feat-badge">MobileNetV2</span>
+                </div>
+                <p>Dual-head multitask model: predicts anemia probability and estimated Hb (g/dL) with Grad-CAM visual heatmaps.</p>
+            </div>
+            <div class="feat-card">
+                <div class="feat-card-top">
+                    <div class="feat-ico nail">
+                        <svg width="20" height="20" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="4"/><path d="M6 9h12"/></svg>
+                    </div>
+                    <h3>Nail Bed Analysis</h3>
+                    <span class="feat-badge">MobileNetV3Large</span>
+                </div>
+                <p>Hb estimation from nail bed microvascular pallor with internal deep feature rescaling.</p>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- SCREENING -->
+<section id="screening" class="sec" aria-label="Screening">
+    <div class="scr-wrap">
+        <div class="scr-title-row">
+            <h2 class="scr-title">Anemia Screening</h2>
+            <p class="scr-sub">Select a screening method below. Capture live with your camera or upload an image, then use Mark &amp; Zoom to focus on the tissue.</p>
+        </div>
+
+        <!-- Patient Demographics Bar -->
+        <div class="pt-bar">
+            <div class="pt-field">
+                <label class="pt-lbl" for="sel-gender">Gender <span class="req-star" style="color:#ef4444; font-weight:bold;">*</span></label>
+                <select id="sel-gender" class="pt-inp" required>
+                    <option value="" selected disabled>Select Gender...</option>
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                </select>
+            </div>
+            <div class="pt-field">
+                <label class="pt-lbl" for="inp-age">Age (years) <span class="req-star" style="color:#ef4444; font-weight:bold;">*</span></label>
+                <input id="inp-age" type="number" class="pt-inp" min="1" max="120" placeholder="Enter age (e.g. 28)" value="" required>
+            </div>
+            <div class="pt-field">
+                <label class="pt-lbl" for="sel-diet">Dietary Preference <span class="req-star" style="color:#ef4444; font-weight:bold;">*</span></label>
+                <select id="sel-diet" class="pt-inp" required>
+                    <option value="" selected disabled>Select Dietary Preference...</option>
+                    <option value="vegetarian">Vegetarian</option>
+                    <option value="non-vegetarian">Non-Vegetarian</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- Tab Bar -->
+        <div class="tabs" role="tablist">
+            <button class="tab on" id="t-eye" role="tab" aria-selected="true" aria-controls="p-eye" type="button">
+                <svg class="tab-ico" width="18" height="18" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                <span class="tab-label">Eye Conjunctiva</span>
+                <span class="tab-arch">MobileNetV2</span>
+            </button>
+            <button class="tab" id="t-nail" role="tab" aria-selected="false" aria-controls="p-nail" type="button">
+                <svg class="tab-ico" width="18" height="18" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="4"/><path d="M6 9h12"/></svg>
+                <span class="tab-label">Nail Bed</span>
+                <span class="tab-arch">MobileNetV3Large</span>
+            </button>
+        </div>
+
+        <!-- EYE PANEL -->
+        <div id="p-eye" class="panel on" role="tabpanel">
+            <div class="two-col">
+                <div>
+                    <div class="upcard">
+                        <div class="upcard-hdr">
+                            <div class="upcard-ico eye">
+                                <svg width="22" height="22" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                            </div>
+                            <div>
+                                <div class="upcard-ttl">Eye Conjunctiva Analysis</div>
+                                <div class="upcard-sub">Upload or snap a photo of the lower inner eyelid (palpebral conjunctiva)</div>
+                            </div>
+                        </div>
+                        <div class="upcard-guide">
+                            <div class="gi"><span class="dot g"></span>Gently pull lower eyelid downward to expose pink mucosa</div>
+                            <div class="gi"><span class="dot g"></span>Use diffuse daylight or bright ambient lighting</div>
+                            <div class="gi"><span class="dot r"></span>Use <strong>Mark &amp; Zoom</strong> after uploading to isolate the conjunctiva</div>
+                        </div>
+                        <div class="dz" id="dz-eye" tabindex="0" role="button" aria-label="Upload eye image">
+                            <input type="file" id="fi-eye" accept="image/jpeg,image/png,image/webp">
+                            <div class="dz-inner" id="dzi-eye">
+                                <svg class="dz-svg" width="42" height="42" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="6" y="8" width="36" height="28" rx="4"/><circle cx="24" cy="22" r="6"/><path d="M6 36l10-10 6 6 8-9 12 13"/></svg>
+                                <p class="dz-txt">Drag and drop photo here, or <span class="dz-cta">browse</span></p>
+                                <p class="dz-hint">PNG · JPG · WEBP · up to 15 MB</p>
+                            </div>
+                            <div class="dz-prev hidden" id="dzp-eye">
+                                <img src="" alt="Eye preview" id="img-eye">
+                                <span class="roi-indicator-badge hidden" id="roi-badge-eye">✓ Focused Tissue ROI</span>
+                                <div class="dz-tools-overlay">
+                                    <button class="dz-tool-pill btn-open-crop" data-target="eye" type="button">
+                                        <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                                        Mark &amp; Zoom
+                                    </button>
+                                </div>
+                                <button class="dz-prev-rm" id="rm-eye" type="button" aria-label="Remove image">✕</button>
+                            </div>
+                        </div>
+                        <div class="dz-btn-row">
+                            <button class="dz-action-btn cam-btn btn-open-cam" data-target="eye" type="button">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                Live Camera
+                            </button>
+                            <button class="dz-action-btn btn-trigger-browse" data-target="eye" type="button">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Browse File
+                            </button>
+                        </div>
+                        <div class="sample-chips">
+                            <span class="sample-chip-lbl">Sample Cases:</span>
+                            <button class="sample-chip-btn btn-load-sample" data-target="eye" data-file="sample_normal_male.png" data-gender="M" data-age="43" type="button">Normal (15.4 g/dL)</button>
+                            <button class="sample-chip-btn btn-load-sample" data-target="eye" data-file="sample_mild_male.png" data-gender="M" data-age="36" type="button">Mild Anemia (12.5)</button>
+                            <button class="sample-chip-btn btn-load-sample" data-target="eye" data-file="sample_moderate_female.png" data-gender="F" data-age="27" type="button">Moderate (10.0)</button>
+                        </div>
+                        <button class="sub-btn" id="btn-eye" disabled type="button">
+                            <span class="btn-lbl">Analyze Eye Image</span>
+                            <span class="spin hidden" id="sp-eye"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="res-col" id="rc-eye">
+                    <div class="res-ph" id="ph-eye">
+                        <svg class="res-ph-ico" width="58" height="58" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.2"><path d="M4 32s12-20 28-20 28 20 28 20-12 20-28 20S4 32 4 32z"/><circle cx="32" cy="32" r="8"/><circle cx="32" cy="32" r="3" fill="currentColor"/></svg>
+                        <h4>Eye Screening Results</h4>
+                        <p>Upload or take a conjunctiva photo, then click Analyze to estimate hemoglobin and view attention heatmap</p>
+                    </div>
+                    <div class="res-card hidden" id="rp-eye"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- NAIL PANEL -->
+        <div id="p-nail" class="panel nail-panel" role="tabpanel">
+            <div class="two-col">
+                <div>
+                    <div class="upcard">
+                        <div class="upcard-hdr">
+                            <div class="upcard-ico nail">
+                                <svg width="22" height="22" viewBox="0 0 24 24"><rect x="6" y="3" width="12" height="18" rx="4"/><path d="M6 9h12"/></svg>
+                            </div>
+                            <div>
+                                <div class="upcard-ttl">Nail Bed Analysis</div>
+                                <div class="upcard-sub">Upload or snap a photo of your fingernail bed under good natural lighting</div>
+                            </div>
+                        </div>
+                        <div class="upcard-guide">
+                            <div class="gi"><span class="dot g"></span>Capture fingernail or thumbnail squarely in the frame</div>
+                            <div class="gi"><span class="dot g"></span>Use bright ambient daylight for accurate capillary pallor reading</div>
+                            <div class="gi"><span class="dot r"></span>Use <strong>Mark &amp; Zoom</strong> to isolate the nail bed from fingers and skin</div>
+                        </div>
+                        <div class="dz" id="dz-nail" tabindex="0" role="button" aria-label="Upload nail image">
+                            <input type="file" id="fi-nail" accept="image/jpeg,image/png,image/webp">
+                            <div class="dz-inner" id="dzi-nail">
+                                <svg class="dz-svg" width="42" height="42" viewBox="0 0 48 48" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="14" y="4" width="20" height="36" rx="6"/><path d="M14 16h20"/></svg>
+                                <p class="dz-txt">Drag and drop photo here, or <span class="dz-cta">browse</span></p>
+                                <p class="dz-hint">PNG · JPG · WEBP · up to 15 MB</p>
+                            </div>
+                            <div class="dz-prev hidden" id="dzp-nail">
+                                <img src="" alt="Nail preview" id="img-nail">
+                                <span class="roi-indicator-badge hidden" id="roi-badge-nail">✓ Focused Tissue ROI</span>
+                                <div class="dz-tools-overlay">
+                                    <button class="dz-tool-pill btn-open-crop" data-target="nail" type="button">
+                                        <svg width="14" height="14" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                                        Mark &amp; Zoom
+                                    </button>
+                                </div>
+                                <button class="dz-prev-rm" id="rm-nail" type="button" aria-label="Remove image">✕</button>
+                            </div>
+                        </div>
+                        <div class="dz-btn-row">
+                            <button class="dz-action-btn cam-btn btn-open-cam" data-target="nail" type="button">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                                Live Camera
+                            </button>
+                            <button class="dz-action-btn btn-trigger-browse" data-target="nail" type="button">
+                                <svg width="16" height="16" viewBox="0 0 24 24"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+                                Browse File
+                            </button>
+                        </div>
+                        <div class="sample-chips">
+                            <span class="sample-chip-lbl">Sample Cases:</span>
+                            <button class="sample-chip-btn btn-load-sample" data-target="nail" data-file="sample_nail_mild_male.png" data-gender="M" data-age="30" type="button">Case A (Nail Mild)</button>
+                            <button class="sample-chip-btn btn-load-sample" data-target="nail" data-file="sample_nail_severe_female.png" data-gender="F" data-age="28" type="button">Case B (Nail Pallor)</button>
+                            <button class="sample-chip-btn btn-load-sample" data-target="nail" data-file="sample_nail_moderate.png" data-gender="F" data-age="35" type="button">Case C (Nail Moderate)</button>
+                        </div>
+                        <button class="sub-btn" id="btn-nail" disabled type="button">
+                            <span class="btn-lbl">Analyze Nail Image</span>
+                            <span class="spin hidden" id="sp-nail"></span>
+                        </button>
+                    </div>
+                </div>
+                <div class="res-col" id="rc-nail">
+                    <div class="res-ph" id="ph-nail">
+                        <svg class="res-ph-ico" width="58" height="58" viewBox="0 0 64 64" fill="none" stroke="currentColor" stroke-width="1.2"><rect x="18" y="4" width="28" height="50" rx="8"/><path d="M18 22h28"/></svg>
+                        <h4>Nail Screening Results</h4>
+                        <p>Upload or snap a nail bed photo, then click Analyze to estimate hemoglobin level</p>
+                    </div>
+                    <div class="res-card hidden" id="rp-nail"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- HISTORY -->
+<section id="history" class="sec" aria-label="Screening History">
+    <div class="hist-wrap">
+        <div class="scr-title-row">
+            <h2 class="scr-title">Patient Screening History</h2>
+            <p class="scr-sub">Live records stored securely. Search, review longitudinal biomarkers, and re-download clinical reports.</p>
+        </div>
+
+        <div class="stats-grid">
+            <div class="stat-card">
+                <span class="stat-lbl">Total Screenings</span>
+                <span class="stat-val" id="st-total">0</span>
+                <span class="stat-sub">Validated Records</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-lbl">Mean Hemoglobin</span>
+                <span class="stat-val" id="st-avg-hb">0.0 <span style="font-size:1.1rem; color:var(--g500);">g/dL</span></span>
+                <span class="stat-sub">Cohort estimate</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-lbl">Anemia Stratification</span>
+                <span class="stat-val" id="st-anemia-rate">0%</span>
+                <span class="stat-sub" id="st-anemia-sub">0 cases detected</span>
+            </div>
+            <div class="stat-card">
+                <span class="stat-lbl">Record Storage</span>
+                <span class="stat-val" style="font-size:1.45rem; color:#059669; display:flex; align-items:center; gap:0.5rem;">
+                    <span class="mongo-dot" style="width:10px; height:10px;"></span>
+                    Online
+                </span>
+                <span class="stat-sub" id="st-db-sub">Active &amp; Synced</span>
+            </div>
+        </div>
+
+        <div class="hist-toolbar">
+            <div class="hist-filters">
+                <button class="hist-filter-btn active" data-filter="ALL" type="button">All Records</button>
+                <button class="hist-filter-btn" data-filter="NORMAL" type="button">Normal</button>
+                <button class="hist-filter-btn" data-filter="MILD_ANEMIA" type="button">Mild Anemia</button>
+                <button class="hist-filter-btn" data-filter="MODERATE_ANEMIA" type="button">Moderate</button>
+                <button class="hist-filter-btn" data-filter="SEVERE_ANEMIA" type="button">Severe</button>
+            </div>
+            <div class="hist-search-box">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
+                <input type="text" id="hist-search-input" placeholder="Search by Report ID, patient, mode...">
+            </div>
+            <button class="btn-modal-sec" id="btn-refresh-hist" type="button" style="padding:0.45rem 0.85rem; font-size:0.8rem;">
+                🔄 Refresh
+            </button>
+        </div>
+
+        <div class="hist-list" id="hist-list-container">
+            <div style="padding:3rem 1.5rem; text-align:center; color:var(--g400); background:#fff; border-radius:var(--radl); border:1px solid var(--g200);">
+                Loading history records...
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- ABOUT -->
+<section id="about" class="sec" aria-label="About">
+    <div class="about-wrap">
+        <div class="scr-title-row">
+            <h2 class="scr-title">How It Works</h2>
+            <p class="scr-sub">Two distinct, independently trained deep learning pipelines designed for non-invasive clinical evaluation</p>
+        </div>
+        <div class="model-grid">
+            <div class="m-card">
+                <div class="m-hdr eye">
+                    <svg width="32" height="32" viewBox="0 0 32 32"><path d="M2 16s5-10 14-10 14 10 14 10-5 10-14 10S2 16 2 16z"/><circle cx="16" cy="16" r="4"/><circle cx="16" cy="16" r="1.5" fill="white" stroke="none"/></svg>
+                    <div><h3>Eye Conjunctiva Model</h3><span>MobileNetV2 Dual-Head</span></div>
+                </div>
+                <div class="m-body">
+                    <dl class="m-specs">
+                        <dt>Architecture</dt><dd>MobileNetV2 Multi-Task Network</dd>
+                        <dt>Input Shape</dt><dd>224 × 224 × 3 RGB</dd>
+                        <dt>Normalization</dt><dd>External: (pixel / 127.5) − 1.0 → [-1, 1]</dd>
+                        <dt>Head 1 Output</dt><dd>Anemia Risk Probability ∈ [0, 1]</dd>
+                        <dt>Head 2 Output</dt><dd>Estimated Hemoglobin (g/dL)</dd>
+                        <dt>Dataset</dt><dd>217 Patients across two international cohorts</dd>
+                        <dt>Performance</dt><dd>AUC: 0.838 · Hb MAE ≈ 1.95 g/dL</dd>
+                    </dl>
+                    <p class="m-note">Features Grad-CAM visual attention heatmaps calculated on the final convolutional layer (<code>out_relu</code>) to confirm localization of palpebral mucosa vascularity.</p>
+                </div>
+            </div>
+            <div class="m-card">
+                <div class="m-hdr nail">
+                    <svg width="32" height="32" viewBox="0 0 32 32"><rect x="8" y="3" width="16" height="24" rx="5"/><path d="M8 11h16"/></svg>
+                    <div><h3>Nail Bed Model</h3><span>MobileNetV3Large</span></div>
+                </div>
+                <div class="m-body">
+                    <dl class="m-specs">
+                        <dt>Architecture</dt><dd>MobileNetV3Large + GAP + Dense(1)</dd>
+                        <dt>Input Shape</dt><dd>224 × 224 × 3 RGB</dd>
+                        <dt>Normalization</dt><dd>Internal Rescaling Layer (1/127.5, offset -1.0)</dd>
+                        <dt>Model Output</dt><dd>Direct Hemoglobin Regression (g/dL)</dd>
+                        <dt>Classification</dt><dd>Derived from WHO demographic thresholds</dd>
+                    </dl>
+                    <p class="m-note">Receives raw RGB float pixels [0, 255]. The model handles feature scaling internally. Because it is a regression-only model, severity categories are determined directly from the estimated hemoglobin level.</p>
+                </div>
+            </div>
+        </div>
+        <div class="warn-box" role="note">
+            <div class="warn-hdr">
+                <svg width="22" height="22" viewBox="0 0 20 20"><path d="M10 2L2 17h16L10 2z" stroke-linecap="round" stroke-linejoin="round"/><path d="M10 8v4" stroke-linecap="round"/><circle cx="10" cy="14.5" r=".5" fill="#d97706"/></svg>
+                <h3>Clinical &amp; Research Disclaimer</h3>
+            </div>
+            <ul class="warn-list">
+                <li>AnemiaSense is an experimental research tool and is not an FDA-approved or CE-cleared diagnostic medical device.</li>
+                <li>Digital non-invasive hemoglobin estimates carry optical uncertainties caused by device sensors, camera compression, and lighting conditions.</li>
+                <li>Always confirm any abnormal screening score with a certified venipuncture laboratory Complete Blood Count (CBC) and serum ferritin test.</li>
+                <li>Never alter iron supplements, dietary therapies, or prescribed medical treatment based solely on non-invasive app outputs.</li>
+                <li>If experiencing symptoms such as severe breathlessness, lightheadedness, chest pain, or tachycardia, seek urgent medical care immediately.</li>
+            </ul>
+        </div>
+    </div>
+</section>
+
+</main>
+
+<!-- LIVE CAMERA MODAL -->
+<div class="modal-overlay hidden" id="modal-cam" role="dialog" aria-modal="true" aria-labelledby="cam-modal-title">
+    <div class="modal-box">
+        <div class="modal-hdr">
+            <div class="modal-hdr-ttl">
+                <h3 id="cam-modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+                    Live Medical Camera
+                </h3>
+                <p id="cam-modal-sub">Position the eyelid or nail bed directly within the alignment guide</p>
+            </div>
+            <button class="modal-close-btn" id="cam-close" type="button" aria-label="Close camera">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="cam-viewfinder">
+                <video id="cam-video" autoplay playsinline muted></video>
+                <img id="cam-frozen-img" alt="Captured frame">
+                <div class="cam-live-indicator" id="cam-live-pill">
+                    <span class="cam-live-dot"></span>
+                    <span>LIVE</span>
+                </div>
+                <div class="cam-reticle" id="cam-reticle">
+                    <span class="cam-reticle-txt" id="cam-reticle-txt">Align Target Tissue</span>
+                </div>
+            </div>
+            <!-- Live Controls -->
+            <div class="cam-controls" id="cam-live-ctrls">
+                <button class="cam-flip-btn" id="cam-flip" type="button" title="Switch Front/Rear Camera">
+                    <svg viewBox="0 0 24 24"><path d="M20 16v-4a8 8 0 0 0-8-8 8 8 0 0 0-8 8v4"/><path d="M4 12l-3 4 3 4"/><path d="M20 12l3 4-3 4"/></svg>
+                </button>
+                <button class="cam-shutter-btn" id="cam-shutter" type="button" title="Take Photo">
+                    <div class="cam-shutter-inner"></div>
+                </button>
+                <div style="width: 42px;"></div><!-- Spacer for balance -->
+            </div>
+            <!-- Review Controls (Shown after snapping) -->
+            <div class="cam-controls hidden" id="cam-review-ctrls" style="gap: 0.85rem;">
+                <button class="btn-modal-sec" id="cam-retake" type="button">
+                    🔄 Retake Photo
+                </button>
+                <button class="btn-modal-prim" id="cam-use-crop" type="button">
+                    🔍 Mark &amp; Zoom ROI
+                </button>
+                <button class="btn-modal-prim" id="cam-use" type="button">
+                    ✓ Use As-Is
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- INTERACTIVE MARK & ZOOM / ROI CROPPER MODAL -->
+<div class="modal-overlay hidden" id="modal-crop" role="dialog" aria-modal="true" aria-labelledby="crop-modal-title">
+    <div class="modal-box">
+        <div class="modal-hdr">
+            <div class="modal-hdr-ttl">
+                <h3 id="crop-modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/><path d="M11 8v6M8 11h6"/></svg>
+                    Mark &amp; Zoom Tissue Focus
+                </h3>
+                <p>Drag the marker box or zoom/pan to isolate the conjunctival mucosa or fingernail bed</p>
+            </div>
+            <button class="modal-close-btn" id="crop-close" type="button" aria-label="Close editor">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="crop-workspace" id="crop-wrap">
+                <canvas id="crop-canvas" width="600" height="380"></canvas>
+                <div class="crop-preview-mini">
+                    <span class="crop-preview-lbl">ROI Patch</span>
+                    <canvas id="crop-mini-canvas" width="128" height="128"></canvas>
+                </div>
+            </div>
+            <div class="crop-toolbar">
+                <div class="crop-zoom-grp">
+                    <button class="crop-btn-sm" id="crop-zoom-out" type="button" title="Zoom out">−</button>
+                    <input type="range" class="crop-slider" id="crop-slider" min="1" max="4" step="0.05" value="1">
+                    <button class="crop-btn-sm" id="crop-zoom-in" type="button" title="Zoom in">+</button>
+                    <span class="crop-zoom-val" id="crop-zoom-val">1.0x</span>
+                </div>
+                <div style="display:flex; gap:0.5rem;">
+                    <button class="crop-btn-sm" id="crop-reset" type="button" title="Reset View" style="width: auto; padding: 0 0.75rem; font-size: 0.78rem;">
+                        ⟲ Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="modal-ftr">
+            <button class="btn-modal-sec" id="crop-cancel" type="button">Cancel</button>
+            <button class="btn-modal-prim" id="crop-apply" type="button">
+                ✓ Apply Focus &amp; Crop
+            </button>
+        </div>
+    </div>
+</div>
+
+<!-- CLINICAL DIAGNOSTIC REPORT MODAL -->
+<div class="modal-overlay hidden" id="modal-report" role="dialog" aria-modal="true" aria-labelledby="rep-modal-title">
+    <div class="modal-box report-box">
+        <div class="modal-hdr report-modal-actions">
+            <div class="modal-hdr-ttl">
+                <h3 id="rep-modal-title">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></svg>
+                    Official Medical Screening Report
+                </h3>
+                <p>Clinical-grade laboratory summary with explainability, biophotonics, and recovery plan</p>
+            </div>
+            <div style="display:flex; align-items:center; gap:0.5rem;">
+                <button class="btn-dl-report" id="rep-btn-print" type="button">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 6 2 18 2 18 9"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="8"/></svg>
+                    Print / Save PDF
+                </button>
+                <button class="btn-modal-sec" id="rep-btn-html" type="button" title="Download Offline HTML Report">
+                    💾 Save HTML
+                </button>
+                <button class="modal-close-btn" id="rep-close" type="button" aria-label="Close report">✕</button>
+            </div>
+        </div>
+        <div class="modal-body" style="padding:0; overflow-y:auto; max-height:80vh;">
+            <div class="rep-doc" id="rep-doc-content">
+                <!-- Dynamically populated report content -->
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- TOAST CONTAINER -->
+<div id="toasts" aria-live="polite"></div>
+
+
+
+<script src="app.js"></script>
+</body>
+</html>

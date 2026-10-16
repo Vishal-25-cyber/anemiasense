@@ -1,0 +1,2 @@
+Finding,Exact_Duplicates,Train_Val_Overlap,Train_Test_Overlap,Val_Test_Overlap,Patient_Independent_Split
+Zero duplicate images and zero patient leakage across all splits.,0,0,0,0,True

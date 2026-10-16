@@ -1,0 +1,35 @@
+{
+    "model_name": "AnemiaSense_MobileNetV2_MultiTask",
+    "version": "1.0.0",
+    "timestamp": "2026-10-09 11:15:00",
+    "architecture": "MobileNetV2 Transfer Learning with Dual Heads",
+    "input_shape": [
+        224,
+        224,
+        3
+    ],
+    "outputs": {
+        "anemia_output": {
+            "type": "binary_classification",
+            "activation": "sigmoid"
+        },
+        "hb_output": {
+            "type": "continuous_regression_g_dl",
+            "activation": "linear"
+        }
+    },
+    "training_samples": 151,
+    "validation_samples": 33,
+    "test_samples": 33,
+    "test_metrics": {
+        "accuracy": 0.9393939393939394,
+        "sensitivity_recall": 0.9285714285714286,
+        "specificity": 0.9473684210526315,
+        "precision": 0.9285714285714286,
+        "f1_score": 0.9285714285714286,
+        "roc_auc": 0.9661654135338346,
+        "hb_mae_g_dl": 0.7845,
+        "hb_rmse_g_dl": 1.0823,
+        "hb_r2_score": 0.8642
+    }
+}

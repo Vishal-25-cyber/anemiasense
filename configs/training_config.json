@@ -1,0 +1,42 @@
+{
+    "random_seed": 42,
+    "batch_size": 16,
+    "target_shape": [224, 224, 3],
+    "split_ratios": {
+        "train": 0.70,
+        "validation": 0.15,
+        "test": 0.15
+    },
+    "stratification": {
+        "variables": ["Country", "Anemic"],
+        "patient_level": true
+    },
+    "stage1_transfer_learning": {
+        "epochs": 12,
+        "optimizer": "adam",
+        "learning_rate": 0.001,
+        "backbone_trainable": false,
+        "loss_weights": {
+            "anemia_output": 1.0,
+            "hb_output": 0.20
+        }
+    },
+    "stage2_fine_tuning": {
+        "epochs": 8,
+        "optimizer": "adam",
+        "learning_rate": 0.00001,
+        "unfreeze_top_layers": 20,
+        "loss_weights": {
+            "anemia_output": 1.0,
+            "hb_output": 0.20
+        },
+        "early_stopping_patience": 4,
+        "reduce_lr_patience": 2,
+        "reduce_lr_factor": 0.5,
+        "min_learning_rate": 1e-7
+    },
+    "loss_functions": {
+        "anemia_output": "binary_crossentropy",
+        "hb_output": "huber_loss_delta_1.0"
+    }
+}

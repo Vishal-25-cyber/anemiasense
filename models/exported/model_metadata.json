@@ -1,0 +1,17 @@
+{
+    "model_name": "AnemiaSense_MobileNetV2_MultiTask",
+    "version": "1.0.0",
+    "architecture": "MobileNetV2 Pretrained Transfer Learning Dual-Head",
+    "test_metrics": {
+        "accuracy": 0.7272727272727273,
+        "sensitivity_recall": 0.6428571428571429,
+        "specificity": 0.7894736842105263,
+        "precision": 0.6923076923076923,
+        "f1_score": 0.6666666666666666,
+        "roc_auc": 0.8383458646616541,
+        "hb_mae_g_dl": 1.9535656206535574,
+        "hb_rmse_g_dl": 2.630568447367178,
+        "hb_r2_score": -0.08934481084652734
+    },
+    "test_sample_count": 33
+}

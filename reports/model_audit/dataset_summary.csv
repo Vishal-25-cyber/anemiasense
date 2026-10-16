@@ -1,0 +1,4 @@
+Split,Total_Patients,Non_Anemic,Non_Anemic_Pct,Anemic,Anemic_Pct,Mild_Anemia,Moderate_Anemia,Severe_Anemia
+Training,151,88,58.28,63,41.72,28,32,3
+Validation,33,19,57.58,14,42.42,4,10,0
+Test,33,19,57.58,14,42.42,5,9,0

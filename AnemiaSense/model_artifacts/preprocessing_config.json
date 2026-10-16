@@ -1,0 +1,31 @@
+{
+    "target_size": [
+        224,
+        224
+    ],
+    "input_channels": 3,
+    "color_space": "RGB",
+    "normalization": {
+        "type": "mobilenet_v2",
+        "scale": 0.00784313725490196,
+        "offset": -1.0,
+        "range": [
+            -1.0,
+            1.0
+        ]
+    },
+    "roi_extraction": {
+        "method": "conjunctiva_mask_or_bounding_box",
+        "background_handling": "neutral_black_standardization",
+        "margin_pixels": 5,
+        "aspect_ratio_preservation": "square_padding"
+    },
+    "quality_checks": {
+        "blur_laplacian_var_min": 20.0,
+        "brightness_mean_range": [
+            20.0,
+            235.0
+        ],
+        "glare_percentage_max": 15.0
+    }
+}

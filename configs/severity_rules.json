@@ -1,0 +1,33 @@
+{
+    "guideline_authority": "World Health Organization (WHO) Hemoglobin Concentrations for the Diagnosis of Anaemia",
+    "target_population": "Adult Non-Pregnant Individuals (Age >= 15 years)",
+    "demographics": {
+        "adult_male": {
+            "minimum_age": 15,
+            "normal_threshold_g_dl": 13.0,
+            "bands": {
+                "normal": {"min_hb": 13.0, "max_hb": 25.0, "clinical_code": "NORMAL"},
+                "mild": {"min_hb": 11.0, "max_hb": 12.9, "clinical_code": "MILD_ANEMIA"},
+                "moderate": {"min_hb": 8.0, "max_hb": 10.9, "clinical_code": "MODERATE_ANEMIA"},
+                "severe": {"min_hb": 0.0, "max_hb": 7.9, "clinical_code": "SEVERE_ANEMIA"}
+            }
+        },
+        "adult_female_non_pregnant": {
+            "minimum_age": 15,
+            "normal_threshold_g_dl": 12.0,
+            "bands": {
+                "normal": {"min_hb": 12.0, "max_hb": 25.0, "clinical_code": "NORMAL"},
+                "mild": {"min_hb": 11.0, "max_hb": 11.9, "clinical_code": "MILD_ANEMIA"},
+                "moderate": {"min_hb": 8.0, "max_hb": 10.9, "clinical_code": "MODERATE_ANEMIA"},
+                "severe": {"min_hb": 0.0, "max_hb": 7.9, "clinical_code": "SEVERE_ANEMIA"}
+            }
+        }
+    },
+    "clinical_actions": {
+        "NORMAL": "Estimated hemoglobin is in the healthy normal range.",
+        "MILD_ANEMIA": "Slightly low. Consider iron-rich foods and consult a doctor if fatigued.",
+        "MODERATE_ANEMIA": "Consult a doctor for a complete blood test (CBC) to confirm.",
+        "SEVERE_ANEMIA": "Prompt medical evaluation advised. Please consult a doctor."
+    },
+    "disclaimer": "AnemiaSense provides automated optical screening and risk stratification. Results are not a standalone diagnostic decision and must be confirmed via standard laboratory venous phlebotomy."
+}

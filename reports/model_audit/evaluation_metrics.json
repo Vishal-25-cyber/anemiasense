@@ -1,0 +1,40 @@
+{
+    "audit_timestamp": "2026-10-09 11:15:00",
+    "test_sample_count": 33,
+    "positive_class": "Anemic (1)",
+    "negative_class": "Non-Anemic (0)",
+    "decision_threshold": 0.5,
+    "classification": {
+        "accuracy": 0.9393939393939394,
+        "accuracy_95_ci": [
+            0.803884,
+            0.983377
+        ],
+        "sensitivity_recall": 0.9285714285714286,
+        "sensitivity_95_ci": [
+            0.685318,
+            0.987309
+        ],
+        "specificity": 0.9473684210526315,
+        "specificity_95_ci": [
+            0.753608,
+            0.990641
+        ],
+        "precision": 0.9285714285714286,
+        "f1_score": 0.9285714285714286,
+        "roc_auc": 0.9661654135338346,
+        "confusion_matrix": {
+            "true_negatives": 18,
+            "false_positives": 1,
+            "false_negatives": 1,
+            "true_positives": 13
+        }
+    },
+    "regression": {
+        "hemoglobin_mae_g_dl": 0.7845,
+        "hemoglobin_rmse_g_dl": 1.0823,
+        "hemoglobin_r2_score": 0.8642,
+        "mean_residual_bias_g_dl": -0.0421,
+        "residual_std_g_dl": 1.0815
+    }
+}

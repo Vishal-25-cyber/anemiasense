@@ -1,0 +1,66 @@
+{
+  "report_title": "AnemiaSense Nail Model Explainable AI (XAI) & Validation Report",
+  "model_architecture": "MobileNetV3Large Continuous Hemoglobin Regression",
+  "checkpoint_filename": "mobilenetv3_corrected_preprocessing_best.keras",
+  "checkpoint_path": "models/nail/mobilenetv3_corrected_preprocessing_best.keras",
+  "audit_date": "2026-10-16",
+  "dataset_specifications": {
+    "total_patients": 250,
+    "total_nail_crops": 750,
+    "crops_per_patient": 3,
+    "split_strategy": "Patient-level stratified partition (zero patient leakage)",
+    "splits": {
+      "training": {
+        "patients": 175,
+        "crops": 525,
+        "percentage": 70.0
+      },
+      "validation": {
+        "patients": 37,
+        "crops": 111,
+        "percentage": 14.8
+      },
+      "locked_test": {
+        "patients": 38,
+        "crops": 114,
+        "percentage": 15.2
+      }
+    },
+    "original_target_metadata": "HB_LEVEL_GperL (grams per liter)",
+    "training_target_conversion": "Converted to grams per deciliter (g/dL) during target preparation",
+    "regression_output_head": "hb_g_dL_output (Dense 1 unit, linear activation)"
+  },
+  "locked_test_performance_metrics": {
+    "mae_g_dl": 1.96,
+    "r2_score": -0.18,
+    "metric_interpretation": "MAE of approximately 1.96 g/dL and negative R-squared indicate substantial regression variance and limited predictive power on the locked hold-out cohort.",
+    "clinical_status": "Academic Research Prototype — NOT clinically validated for standalone medical diagnosis or hemoglobin measurement."
+  },
+  "verified_input_pipeline": {
+    "input_tensor_shape": [null, 224, 224, 3],
+    "input_color_space": "RGB",
+    "aspect_ratio_handling": "Aspect-ratio preserved resize with symmetric zero-padding to 224x224",
+    "data_type": "float32 in range [0, 255]",
+    "internal_rescaling_layer": {
+      "layer_name": "rescaling_1",
+      "scale": 0.00784313725490196,
+      "offset": -1.0,
+      "mathematical_formula": "pixel * (1.0 / 127.5) - 1.0 -> maps [0, 255] to [-1.0, 1.0]",
+      "critical_requirement": "Feed raw [0, 255] RGB float32 pixels. External pre-normalization must NOT be applied to prevent double-normalization."
+    }
+  },
+  "explainability_xai_specifications": {
+    "method": "Gradient-weighted Class Activation Mapping (Grad-CAM)",
+    "backbone": "MobileNetV3Large (nested functional layer within top-level model)",
+    "target_feature_layer": "activation_39 (final hard-swish activation of backbone preceding GlobalAveragePooling2D)",
+    "alternative_valid_layer": "conv_1 (final 1x1 Conv2D layer of backbone)",
+    "feature_map_dimensions": [7, 7, 960],
+    "gradient_propagation_verified": true,
+    "checkpoint_identity_notice": "The exact training checkpoint utilized for historical explainability trials has not been confirmed independently. Grad-CAM visual heatmaps in this version represent exploratory visual activations of the current mobilenetv3_corrected_preprocessing_best.keras checkpoint and do not constitute clinical proof of subungual microvascular focus."
+  },
+  "clinical_and_research_disclaimers": {
+    "research_warning": "Research prototype: This nail-image model provides an experimental estimate and is not a laboratory measurement or medical diagnosis. Its accuracy is limited (locked-test MAE ~1.96 g/dL, negative R²). Do not use this result alone to diagnose anemia, assess severity, or make treatment decisions. Consult a qualified healthcare professional and obtain an appropriate blood test (venous CBC).",
+    "prescriptions": "Strictly prohibited. No iron supplements, pharmaceutical drugs, or treatments may be prescribed from optical screening.",
+    "modality_independence": "The nail model runs 100% independently from the eye model. No synthetic averaging, feature fusion, or joint voting is conducted."
+  }
+}

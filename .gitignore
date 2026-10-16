@@ -1,0 +1,33 @@
+# Byte-compiled / optimized files
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+
+# Environments
+.venv/
+env/
+venv/
+ENV/
+
+# Large Datasets and Archives
+*.zip
+archive (14)/
+archive (14).zip
+archive*/
+data/raw/
+data/extracted/
+data/processed/
+
+# Checkpoint model weights & backups
+models/checkpoints/
+backups/
+
+# Jupyter Notebook Checkpoints
+.ipynb_checkpoints/
+
+# OS and Editor artifacts
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
